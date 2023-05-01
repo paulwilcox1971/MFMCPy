@@ -16,26 +16,26 @@ spec_fname = 'MFMC Specification 2.0.0.xlsx'
 SPEC = pd.read_excel(spec_fname, index_col = 'Name')
 TYPE_TO_PREFIX = {'SEQUENCE': '/{sequence}/', 'PROBE': '/{probe}/', 'LAW': '/{law}/'}
 
-
 @dataclass
 class cl_loc_details:
     ref: str
     name: str
     location: str 
-    
-# @dataclass
-# class cl_attr_details:
-#     name: str
-#     mandatory: bool
-#     dtype: np.dtype
-#     shape: list[int]
 
 def fn_check_sequence(MFMC, h5_obj, size_table = {}, err_str = ''):
     #Check it is a sequence first
     if 'TYPE' not in list(h5_obj.attrs) or h5_obj.attrs["TYPE"] != "SEQUENCE":
         err_str = 'Object is not MFMC sequence'
         return (size_table, err_str)
+    #First check all entries in sequence
     (size_table, err_str) = fn_check_obj(MFMC, h5_obj, size_table, err_str)
+    
+    #Next check all probes in probe list
+    #TODO
+    #Finally check all focal laws - all probes referenced must be in probe list
+    #TODO
+    
+    
     return (size_table, err_str)
 
 def fn_check_obj(MFMC, h5_obj, size_table = {}, err_str = ''):
@@ -43,7 +43,6 @@ def fn_check_obj(MFMC, h5_obj, size_table = {}, err_str = ''):
         err_str += 'Referenced object missing MFMC TYPE attribute'
         return (False, size_table, err_str)
     prefix = TYPE_TO_PREFIX[h5_obj.attrs["TYPE"]]
-    success = True
     dsets_in_obj = fn_get_dataset_keys(h5_obj)
     #Extract relevant part of spec
     spec = SPEC.loc[SPEC.index[:].str.startswith(prefix),:]
@@ -62,17 +61,21 @@ def fn_check_obj(MFMC, h5_obj, size_table = {}, err_str = ''):
                 item = None
         if item is not(None):
             #check type
+            #Case for arrays of HDF5 refs - check they are refs to right thing
             if hasattr(item, 'dtype') and item.dtype == np.dtype('O'):
-                print('object ref:', name) 
-                for o in item:
-                    print(name)
-                    (size_table, err_str) = fn_check_obj(MFMC, MFMC[o], size_table, err_str)
+                #print('object ref:', name)
+                #get list of unique ones to check
+                unique_items = list(set([h5.h5r.get_name(i, MFMC.id) for i in item]))
+                for i in unique_items:
+                    if 'TYPE' not in list(MFMC[i].attrs) or MFMC[i].attrs['TYPE'] not in spec.loc[name, 'Reference to']:
+                        err_str += 'Objects referenced in ' + name + ' should be type ' + spec.loc[name, 'Reference to']
             #check dimensions
             if hasattr(item, 'shape'):
                 shape_tuple = tuple(reversed(item.shape))
                 shape_str = spec.loc[name, 'Size or content']
                 (size_table, e) = fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table)
-                err_str += name + ': ' + e + '\n'
+                if e:
+                    err_str += name + ': ' + e + '\n'
         else:
             if spec.loc[name, 'M or O'] == 'M':
                 err_str += 'Mandatory item ' + name + ' missing\n'
@@ -99,25 +102,6 @@ def fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table):
                 size_table[ss] = s
     return (size_table, '')
 
-
-
-#Sequence attribute specifications
-# SEQUENCE_ATTRS = []
-# SEQUENCE_ATTRS.append(cl_attr_details(name = 'START_TIME', mandatory = True, dtype = float, shape = [1]))
-# SEQUENCE_ATTRS.append(cl_attr_details(name = 'TIME_STEP', mandatory = True, dtype = float, shape = [1]))
-# SEQUENCE_ATTRS.append(cl_attr_details(name = 'SPECIMEN_VELOCITY', mandatory = True, dtype = float, shape = [2]))
-# SEQUENCE_ATTRS.append(cl_attr_details(name = 'WEDGE_VELOCITY', mandatory = False, dtype = float, shape = [2]))
-# SEQUENCE_ATTRS.append(cl_attr_details(name = 'TAG', mandatory = False, dtype = str, shape = [1]))
-# SEQUENCE_ATTRS.append(cl_attr_details(name = 'DAC_CURVE', mandatory = False, dtype = str, shape = [np.NaN]))
-
-# SEQUENCE_DSETS = []
-# SEQUENCE_DSETS.append(cl_attr_details(name = 'PROBE_POSITION', mandatory = True, dtype = float, shape = [3, np.NaN, np.NaN]))
-# #dimension order from h5py seems to be reverse of expected - check of row or column major
-
-# def fn_compare_shapes(a, b):
-#     #compares shapes ignoring NaNs
-#     return np.all(np.ma.masked_where(np.isnan(a), a) == np.ma.masked_where(np.isnan(b), b))
-
 def fn_get_dataset_keys(group):
     keys = []
     for k in group.keys(): 
@@ -125,8 +109,7 @@ def fn_get_dataset_keys(group):
             keys.append(k)
     return keys
 
-
-def fn_MFMC_open_file(fname, root_path = '/'):
+def fn_open_file(fname, root_path = '/'):
     MFMC = h5.File(fname, 'r')
     return MFMC
 

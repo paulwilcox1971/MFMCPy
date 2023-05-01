@@ -10,9 +10,7 @@ import numpy as np
 
 fname = "example mfmc file from brain.mfmc"
 
-MFMC = mfmc.fn_MFMC_open_file(fname)
-
-#tmp = mfmc.fn_hdf5_group_refs_by_type(m, 'LAW')
+MFMC = mfmc.fn_open_file(fname)
 
 sequence_list = mfmc.fn_get_sequence_list(MFMC)
 probe_list = mfmc.fn_get_probe_list(MFMC)
@@ -28,8 +26,10 @@ for s in sequence_list:
     
 #mfmc.fn_MFMC_check_file(MFMC)
 (size_table, err_str) = mfmc.fn_check_sequence(MFMC, MFMC[sequence_list[0].ref])
-print('ERRORS')
-print(err_str)
-print('SIZE TABLE')
+print('Sise table')
 for k in size_table.keys():
-    print(k + ': ' + str(size_table[k]))
+    print('  ' + k + ': ' + str(size_table[k]))
+    
+if err_str:
+    print('ERRORS')
+    print(err_str)
