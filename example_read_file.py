@@ -7,29 +7,26 @@ Created on Mon Apr 24 13:58:50 2023
 
 import MFMCPy as mfmc
 import numpy as np
+import h5py as h5
 
 fname = "example mfmc file from brain.mfmc"
+fname = "example mfmc file from brain 2.mfmc"
+fname = 'new_brain_example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
 sequence_list = mfmc.fn_get_sequence_list(MFMC)
-probe_list = mfmc.fn_get_probe_list(MFMC)
-law_list = mfmc.fn_get_law_list(MFMC)
 
-print('File contains', len(probe_list), 'probes,', len(sequence_list), 'sequences, and', len(law_list), 'laws')
-print('  Probes:')
-for p in probe_list:
-    print('    ', p.name)
-print('  Sequences:')
+suppress_law_details = True
+
 for s in sequence_list:
-    print('    ', s.name)
-    
-#mfmc.fn_MFMC_check_file(MFMC)
-(size_table, err_str) = mfmc.fn_check_sequence(MFMC, MFMC[sequence_list[0].ref])
-print('Sise table')
-for k in size_table.keys():
-    print('  ' + k + ': ' + str(size_table[k]))
-    
-if err_str:
-    print('ERRORS')
-    print(err_str)
+    print('SEQUENCE', s.name)
+    (size_table, err_list, law_list, probe_list, probes_referenced_by_laws) = mfmc.fn_check_sequence(MFMC, MFMC[s.ref])
+    print('  SIZE TABLE')
+    for k in size_table.keys():
+        if not(k.startswith('N_C') and suppress_law_details):
+            print('    ' + k + ': ' + str(size_table[k]))
+    if err_list:
+        print('  ERRORS')
+        for err in err_list:
+            print('    ' + err)
