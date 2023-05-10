@@ -9,6 +9,10 @@ import MFMCPy as mfmc
 import numpy as np
 import h5py as h5
 
+spec_fname = 'MFMC Specification 2.0.0.xlsx'
+
+
+
 fname = "example mfmc file from brain.mfmc"
 fname = "example mfmc file from brain 2.mfmc"
 fname = 'new_brain_example.mfmc'
@@ -19,9 +23,11 @@ sequence_list = mfmc.fn_get_sequence_list(MFMC)
 
 suppress_law_details = True
 
+SPEC = mfmc.fn_load_specification(spec_fname)
+
 for s in sequence_list:
-    print('SEQUENCE', s.name)
-    (size_table, err_list, law_list, probe_list, probes_referenced_by_laws) = mfmc.fn_check_sequence(MFMC, MFMC[s.ref])
+    print('SEQUENCE', s)
+    (check_log, size_table, err_list) = mfmc.fn_check_sequence(MFMC, SPEC, MFMC[s])
     print('  SIZE TABLE')
     for k in size_table.keys():
         if not(k.startswith('N_C') and suppress_law_details):
@@ -30,3 +36,6 @@ for s in sequence_list:
         print('  ERRORS')
         for err in err_list:
             print('    ' + err)
+
+
+mfmc.fn_close_file(MFMC)
