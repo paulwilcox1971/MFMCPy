@@ -60,9 +60,15 @@ def fn_hdf5_group_refs_by_type(MFMC, TYPE):
     names = []
     def fn_dummy(name):
         if 'TYPE' in MFMC[name].attrs:
-            if TYPE == MFMC[name].attrs['TYPE']:
+            if TYPE == fn_str_to_utf(MFMC[name].attrs['TYPE']):
                 #names.append(cl_loc_details(ref = MFMC[name].ref, name = fn_name_from_path(name), location = MFMC[name].parent.name))
                 names.append(name)
         return None
     MFMC.visit(fn_dummy)
     return names
+
+def fn_str_to_utf(s):
+    if isinstance(s, bytes):
+        return s.decode('utf-8')
+    else:
+        return s

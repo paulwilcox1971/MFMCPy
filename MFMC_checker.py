@@ -39,20 +39,22 @@ def fn_check_sequence(MFMC, SPEC, sequence_name):
     err_list = []
     
     #Check it is a sequence first
-    if 'TYPE' not in list(sequence_name.attrs) or sequence_name.attrs["TYPE"] != MFMC_utils.SEQUENCE_TYPE:
+    if 'TYPE' not in list(sequence_name.attrs) or MFMC_utils.fn_str_to_utf(sequence_name.attrs["TYPE"]) != MFMC_utils.SEQUENCE_TYPE:
         err_list.append('Object is not MFMC sequence')
-        return (check_log, size_table, err_list, None, None, None)
+        return (check_log, size_table, err_list)
     
     #First check sequence group itself
     sequence_specification = fn_get_relevant_part_of_spec(SPEC, MFMC_utils.SEQUENCE_TYPE)
+    #return (check_log, size_table, err_list)
     (check_log, size_table, err_list, objects_referenced_by_sequence) = fn_check_mfmc_group_against_specification(MFMC, SPEC, sequence_name, sequence_specification, check_log, size_table, err_list)
-    
+
     #Second, check all probe groups in sequence's probe list
     probe_list_from_sequence = objects_referenced_by_sequence['PROBE_LIST']
     probe_spec = fn_get_relevant_part_of_spec(SPEC, MFMC_utils.PROBE_TYPE)
+    print(size_table)
     for probe in probe_list_from_sequence:
         (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, SPEC, MFMC[probe], probe_spec, check_log, size_table, err_list)
-    
+
     #Third, check all law groups in sequence's transmit and receive laws, and 
     #log all the probes referenced by laws
     law_list_from_sequence = list(set(objects_referenced_by_sequence['TRANSMIT_LAW'] + objects_referenced_by_sequence['RECEIVE_LAW']))
@@ -65,13 +67,15 @@ def fn_check_sequence(MFMC, SPEC, sequence_name):
     
     #Check all probes referenced by laws are in sequence's probe list
     #probe_name_list = [MFMC[p].name for p in probe_list]
+    print(size_table)
     for r in probes_referenced_by_laws:
         if MFMC[r].name not in probe_list_from_sequence:# probe_name_list:
             err_list.append(err_list + ': Probe ' + MFMC[r].name + ' not in probe list')
-  
+    #return (check_log, size_table, err_list)
     #Final thing - check element indexing in laws is range
     for law in law_list_from_sequence:
-        probes = [MFMC[i].name for i in MFMC[law]['PROBE']]
+        probes = [MFMC_utils.fn_str_to_utf(MFMC[i].name) for i in MFMC[law]['PROBE']]
+        print(probes)
         max_vals = [size_table['N_E<' + p + '>'] for p in probes]
         vals = np.atleast_1d(MFMC[law]['ELEMENT'])
         for (p, v, m, i) in zip(probes, vals, max_vals, range(len(probes))):
@@ -93,13 +97,14 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
     #This function works through spec and checks the data in mfmc_group against 
     #it for (0) its presence if mandatory, (1) its type, (2) its shape, and (3)
     #if HDF5 object reference that it points to correct type of mfmc_group
+    objects_referenced = {}
     if 'TYPE' not in list(mfmc_group.attrs):
         err_list.append(mfmc_group.name + ': missing TYPE attribute')
-        return (check_log, size_table, err_list)
-    if mfmc_group.attrs["TYPE"] not in SPEC_TYPE_PREFIX.keys():    
+        return (check_log, size_table, err_list, objects_referenced)
+    if MFMC_utils.fn_str_to_utf(mfmc_group.attrs["TYPE"]) not in SPEC_TYPE_PREFIX.keys():    
         err_list.append(mfmc_group.name + ': TYPE attribute not a recognised MFMC type')
-        return (check_log, size_table, err_list)
-    objects_referenced = {}
+        return (check_log, size_table, err_list, objects_referenced)
+    
     
     dsets_in_obj = MFMC_utils.fn_get_dataset_keys(mfmc_group)
     attrs_in_obj = list(mfmc_group.attrs)
@@ -120,7 +125,10 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
                 item = mfmc_group.attrs[name]
             else:
                 item = None
-                
+        
+        if isinstance(item, bytes):
+            item = MFMC_utils.fn_str_to_utf(item)
+        
         #Check the object matches specification
         
         #0. If mandatory in spec, check datafield appears in group
@@ -158,6 +166,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
             shape_str = spec.loc[name, 'Size or content']
             if mfmc_group.attrs['TYPE'] in SPEC_TYPE_COUNTER.keys():
                 shape_str = shape_str.replace(SPEC_TYPE_COUNTER[mfmc_group.attrs['TYPE']], '<' + mfmc_group.name + '>')
+            
             (size_table, err_str) = fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table)
             if err_str:
                 check_string += err_str + SEPARATOR_STR
@@ -169,7 +178,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
         if item_dtype == np.dtype('O'):
             #get list of unique ones to check
             unique_items = MFMC_utils.fn_unique_h5_ref_list(MFMC, item)
-            if any(['TYPE' not in list(MFMC[i].attrs) or MFMC[i].attrs['TYPE'] not in spec.loc[name, 'Reference to'] for i in unique_items]):
+            if any(['TYPE' not in list(MFMC[i].attrs) or MFMC_utils.fn_str_to_utf(MFMC[i].attrs['TYPE']) not in spec.loc[name, 'Reference to'] for i in unique_items]):
                 err_str = 'Objects referenced should be type ' + spec.loc[name, 'Reference to']
                 err_list.append(base_string + err_str)
                 check_string += err_str + SEPARATOR_STR
@@ -183,6 +192,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
     return (check_log, size_table, err_list, objects_referenced)    
                 
 def fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table):
+    #print(shape_tuple, shape_str, size_table)
     shape_str = shape_str.replace(' ', '')
     shape_str = shape_str.replace('[', '')
     shape_str = shape_str.replace(']', '')
@@ -199,7 +209,7 @@ def fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table):
             if ss in size_table.keys():
                 if size_table[ss] != s:
                     err = 'dimension inconsistency (dim ' + str(i + 1) + ' should be ' + ss + ')'
-                    return (False, size_table, err)
+                    return (size_table, err)
             else:
                 size_table[ss] = s
     return (size_table, None)
