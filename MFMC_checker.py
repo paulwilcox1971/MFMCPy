@@ -51,7 +51,8 @@ def fn_check_sequence(MFMC, SPEC, sequence_name):
     #Second, check all probe groups in sequence's probe list
     probe_list_from_sequence = objects_referenced_by_sequence['PROBE_LIST']
     probe_spec = fn_get_relevant_part_of_spec(SPEC, MFMC_utils.PROBE_TYPE)
-    print(size_table)
+    #print(probe_list_from_sequence)
+    #print(size_table)
     for probe in probe_list_from_sequence:
         (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, SPEC, MFMC[probe], probe_spec, check_log, size_table, err_list)
 
@@ -67,7 +68,7 @@ def fn_check_sequence(MFMC, SPEC, sequence_name):
     
     #Check all probes referenced by laws are in sequence's probe list
     #probe_name_list = [MFMC[p].name for p in probe_list]
-    print(size_table)
+    #print(size_table)
     for r in probes_referenced_by_laws:
         if MFMC[r].name not in probe_list_from_sequence:# probe_name_list:
             err_list.append(err_list + ': Probe ' + MFMC[r].name + ' not in probe list')
@@ -75,7 +76,8 @@ def fn_check_sequence(MFMC, SPEC, sequence_name):
     #Final thing - check element indexing in laws is range
     for law in law_list_from_sequence:
         probes = [MFMC_utils.fn_str_to_utf(MFMC[i].name) for i in MFMC[law]['PROBE']]
-        print(probes)
+        #print(size_table)
+        #print(probes)
         max_vals = [size_table['N_E<' + p + '>'] for p in probes]
         vals = np.atleast_1d(MFMC[law]['ELEMENT'])
         for (p, v, m, i) in zip(probes, vals, max_vals, range(len(probes))):
@@ -164,8 +166,8 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
                 #for scalars
                 shape_tuple = (1, )
             shape_str = spec.loc[name, 'Size or content']
-            if mfmc_group.attrs['TYPE'] in SPEC_TYPE_COUNTER.keys():
-                shape_str = shape_str.replace(SPEC_TYPE_COUNTER[mfmc_group.attrs['TYPE']], '<' + mfmc_group.name + '>')
+            if MFMC_utils.fn_str_to_utf(mfmc_group.attrs['TYPE']) in SPEC_TYPE_COUNTER.keys():
+                shape_str = shape_str.replace(SPEC_TYPE_COUNTER[MFMC_utils.fn_str_to_utf(mfmc_group.attrs['TYPE'])], '<' + mfmc_group.name + '>')
             
             (size_table, err_str) = fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table)
             if err_str:
