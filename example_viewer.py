@@ -12,6 +12,7 @@ import numpy as np
 
 fname = 'BRAIN example.mfmc'
 fname = 'AS example.mfmc'
+fname = 'new_brain_example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
