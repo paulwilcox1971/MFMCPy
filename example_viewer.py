@@ -10,7 +10,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-fname = 'new_brain_example.mfmc'
+fname = 'BRAIN example.mfmc'
+fname = 'AS example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
