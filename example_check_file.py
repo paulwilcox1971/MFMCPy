@@ -9,10 +9,8 @@ import MFMC_Py as mfmc
 
 spec_fname = 'MFMC Specification 2.0.0.xlsx'
 
-fname = "example mfmc file from brain.mfmc"
-fname = "example mfmc file from brain 2.mfmc"
-fname = 'new_brain_example.mfmc'
-#fname = 'FMC.mfmc'
+fname = 'BRAIN example.mfmc'
+#fname = 'AS example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
@@ -35,4 +33,4 @@ for s in sequence_list:
             print('    ' + err)
 
 
-#mfmc.fn_close_file(MFMC)
+mfmc.fn_close_file(MFMC)
