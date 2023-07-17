@@ -12,14 +12,18 @@ spec_fname = 'MFMC Specification 2.0.0.xlsx'
 fname = "example mfmc file from brain.mfmc"
 fname = "example mfmc file from brain 2.mfmc"
 fname = 'new_brain_example.mfmc'
-#fname = 'FMC.mfmc'
+fname = 'FMC.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
+probe_list = mfmc.fn_get_probe_list(MFMC)
+
+for p in probe_list:
+    (probe_match, probe_details) = mfmc.fn_analyse_probe(MFMC[p])
+
+
 sequence_list = mfmc.fn_get_sequence_list(MFMC)
-
 suppress_law_details = True
-
 SPEC = mfmc.fn_load_specification(spec_fname)
 
 for s in sequence_list:

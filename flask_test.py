@@ -1,34 +1,32 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed May 10 21:46:05 2023
+Created on Fri Jul 14 12:59:50 2023
 
 @author: mepdw
 """
 from flask import Flask, render_template, request
-#from werkzeug import secure_filename
 
 app = Flask(__name__)
 
-@app.route("/")
-def hello_world():
-    return "<p>Index</p>"
-
-@app.route('/hello')
-def hello():
-    return 'Hello, World'
-
-
-@app.route('/upload', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def upload_file():
-   return render_template('upload.html')
+    if request.method == 'POST':
+        file = request.files['file']
+        if file:
+            # Save the uploaded file to a desired location
+            file.save('uploads/' + file.filename)
+            
+            # Read the contents of the uploaded file
+            with open('uploads/' + file.filename, 'r') as f:
+                contents = f.read()
+                
+            # Process the contents and generate the desired text
+            # In this example, we'll just return the contents as is
+            processed_text = contents
+            
+            return render_template('result.html', text=processed_text)
+    
+    return render_template('upload.html')
 
-# @app.route('/uploader', methods = ['GET', 'POST'])
-# def upload_file():
-#    if request.method == 'POST':
-#       f = request.files['file']
-#       f.save(secure_filename(f.filename))
-#       return 'file uploaded successfully'
-		
 if __name__ == '__main__':
-   app.run(debug = True)
-        
+    app.run(debug=True)
