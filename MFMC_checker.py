@@ -200,7 +200,7 @@ def fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table):
     shape_str = shape_str.replace(']', '')
     shape_str = shape_str.split(',')
     if len(shape_str) != len(shape_tuple):
-        err = 'number of dimension mismatch ('+ str(len(shape_str)) + ' should be ' + str(len(shape_tuple)) + ')'
+        err = 'number of dimension mismatch ('+ str(len(shape_tuple)) + ' should be ' + str(len(shape_str)) + ')'
         return (size_table, err)
     for (ss, s, i) in zip(shape_str, shape_tuple, range(len(shape_str))):
         if ss.isnumeric():

@@ -37,13 +37,13 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance):
     dimensional_tolerance = np.sqrt(np.sum((np.max(p, axis = 0) - np.min(p, axis = 0)) ** 2)) * relative_tolerance
         
     #Check elements all same size and orientation?
-    log_likelihood -= fn_normal_log_likelihood_rows_are_same(e1, dimensional_tolerance)
-    log_likelihood -= fn_normal_log_likelihood_rows_are_same(e2, dimensional_tolerance)
+    log_likelihood += fn_normal_log_likelihood_rows_are_same(e1, dimensional_tolerance)
+    log_likelihood += fn_normal_log_likelihood_rows_are_same(e2, dimensional_tolerance)
     
     #Check element positions are colinear
     (point_on_line, line_direction) = fn_vector_best_fit_line(p)
     dist_from_line = fn_calculate_distance_to_line(p, line_direction, point_on_line)
-    log_likelihood -= fn_normal_log_likelihood(dist_from_line, 0, dimensional_tolerance)
+    log_likelihood += fn_normal_log_likelihood(dist_from_line, 0, dimensional_tolerance)
         
     #Check points are evenly spaced along line
     k = fn_lambda_for_point(p, point_on_line, line_direction)
@@ -52,7 +52,7 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance):
        details[WARNINGS_KEY] = 'Elements not numbered in order'
        k = np.sort(k)
     dk = k[1: ] - k[0: -1]
-    log_likelihood -= fn_normal_log_likelihood_rows_are_same(dk, dimensional_tolerance)
+    log_likelihood += fn_normal_log_likelihood_rows_are_same(dk, dimensional_tolerance)
     
     #Add the details - note numbers are not rounded at this point
     details[NUMBER_OF_ELEMENTS_KEY] = p.shape[0]
@@ -83,8 +83,8 @@ def fn_test_for_planar_2d_probe(probe, relative_tolerance):
     dimensional_tolerance = np.sqrt(np.sum((np.max(p, axis = 0) - np.min(p, axis = 0)) ** 2)) * relative_tolerance
         
     #Check elements all same size and orientation
-    log_likelihood -= fn_normal_log_likelihood_rows_are_same(e1, dimensional_tolerance)
-    log_likelihood -= fn_normal_log_likelihood_rows_are_same(e2, dimensional_tolerance)
+    log_likelihood += fn_normal_log_likelihood_rows_are_same(e1, dimensional_tolerance)
+    log_likelihood += fn_normal_log_likelihood_rows_are_same(e2, dimensional_tolerance)
     
     #Check element positions are coplanar
     # TODO
@@ -105,7 +105,7 @@ def fn_normal_log_likelihood_rows_are_same(vals, sigma):
     return fn_normal_log_likelihood(vals, np.mean(vals, axis = 0, keepdims = True), sigma) #np.sum(np.log(np.exp((np.sum((vals - np.mean(vals, axis = 0, keepdims = True)) ** 2, axis = 1)) / sigma ** 2)))
 
 def fn_normal_log_likelihood(vals, mu, sigma):
-    normal_log_likelihood = np.sum(np.log(np.exp((np.sum((vals - mu) ** 2)) / sigma ** 2)))
+    normal_log_likelihood = -np.sum((np.sum((vals - mu) ** 2)) / sigma ** 2)
     #print('Log likelihood:', normal_log_likelihood)
     return normal_log_likelihood
 
