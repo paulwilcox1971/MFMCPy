@@ -5,13 +5,12 @@ Created on Mon Apr 24 13:58:50 2023
 @author: mepdw
 """
 
-import MFMC_Py as mfmc
+#import mfmc.checker.checker as mfmc
+import mfmc
 
-spec_fname = 'MFMC Specification 2.0.0.xlsx'
+spec_fname = 'docs/MFMC Specification 2.0.0.xlsx'
 
-fname = 'BRAIN example.mfmc'
-#fname = 'AS example.mfmc'
-fname = 'BRAIN 2D array example3.mfmc'
+fname = 'Example MFMC files/AS example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
@@ -32,9 +31,5 @@ for s in sequence_list:
         print('  ERRORS')
         for err in err_list:
             print('    ' + err)
-
-for p in probe_list:
-    probe_details = mfmc.fn_analyse_probe(MFMC[p], relative_tolerance = 0.000001)
-    mfmc.fn_pretty_print_dictionary(probe_details)
 
 mfmc.fn_close_file(MFMC)

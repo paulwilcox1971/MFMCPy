@@ -4,15 +4,14 @@ Created on Wed May 10 23:39:24 2023
 
 @author: mepdw
 """
-import MFMC_Py as mfmc
 
-import matplotlib as mpl
+import mfmc
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-fname = 'BRAIN example.mfmc'
-fname = 'AS example.mfmc'
-fname = 'new_brain_example.mfmc'
+
+fname = 'Example MFMC files/AS example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
