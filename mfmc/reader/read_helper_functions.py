@@ -8,12 +8,12 @@ Created on Fri Jul 14 17:30:12 2023
 #import MFMC_Py as mfmc
 import numpy as np
 import re
-from ..utils import utils
-#from numbers import Number
-
-from . import probe_type_testers
-
 from inspect import isfunction
+
+import sys
+sys.path.append('..') #So mfmc can be found in parent directory
+import mfmc
+
 
 PROBE_TEST_FUNCTION_PREFIX = 'fn_test_for'
 
@@ -22,13 +22,13 @@ def fn_analyse_probe(probe, relative_tolerance = 0.000001):
     match = 0
     details = {}
     #get a list of the probe tester functions in file
-    names = dir(probe_type_testers)
+    names = dir(mfmc)
     for n in names:
-        fn_test_function = getattr(probe_type_testers, n)
+        fn_test_function = getattr(mfmc, n)
         if isfunction(fn_test_function) and n.startswith(PROBE_TEST_FUNCTION_PREFIX):
             d = fn_test_function(probe, relative_tolerance)
-            if d[probe_type_testers.MATCH_KEY] > match:
-                match = d[probe_type_testers.MATCH_KEY]
+            if d[mfmc.MATCH_KEY] > match:
+                match = d[mfmc.MATCH_KEY]
                 details = d
            
     return details

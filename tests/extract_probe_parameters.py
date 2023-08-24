@@ -4,9 +4,9 @@ Created on Fri Jul 28 10:52:45 2023
 
 @author: mepdw
 """
-from .. import MFMC_Py as mfmc
+import mfmc
 
-fname = '../Example MFMC files/AS example.mfmc'
+fname = 'Example MFMC files/AS example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 
