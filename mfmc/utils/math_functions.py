@@ -7,6 +7,40 @@ Created on Tue Aug 22 15:28:00 2023
 
 import numpy as np
 
+def fn_rotate_about_x_axis(data, theta):
+    c = np.cos(theta)
+    s = np.sin(theta)
+    m = np.array([
+        [1, 0, 0],
+        [0, c, -s], 
+        [0, s, c]])
+    return np.matmul(m, data)
+
+def fn_rotate_about_y_axis(data, theta):
+    c = np.cos(theta)
+    s = np.sin(theta)
+    m = np.array([
+        [c, 0, -s], 
+        [0, 1, 0], 
+        [s, 0, c]])
+    return np.matmul(m, data)
+
+def fn_rotate_about_z_axis(data, theta):
+    c = np.cos(theta)
+    s = np.sin(theta)
+    m = np.array([
+        [c, -s, 0], 
+        [s, c, 0], 
+        [0, 0, 1]])
+    return np.matmul(m, data)
+
+def fn_rotate_about_xyz_axes(data, xtheta, ytheta, ztheta):
+    data = fn_rotate_about_x_axis(data, xtheta)
+    data = fn_rotate_about_y_axis(data, ytheta)
+    data = fn_rotate_about_z_axis(data, ztheta)
+    return data
+    
+
 def fn_convert_to_natural_coordinates(p, relative_tolerance = 0.000001):
     #get PCs
     (q, v) = fn_pca(p, 3)

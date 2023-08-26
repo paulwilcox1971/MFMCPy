@@ -13,7 +13,9 @@ import sys
 sys.path.append('..') #So mfmc can be found in parent directory
 import mfmc
 
-def fn_test_for_1D_linear_probe(probe, relative_tolerance):
+
+
+def fn_test_for_1D_linear_probe(probe, relative_tolerance = mfmc.default_tolerance):
     details = {mfmc.TYPE_KEY: mfmc.ARRAY_TYPE_1D_LINEAR, mfmc.MATCH_KEY: 0}
     log_likelihood = 0
     #Load element positions etc as an nx3 matrices
@@ -55,7 +57,7 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance):
     
     return details
 
-def fn_test_for_2d_matrix_probe(probe, relative_tolerance):
+def fn_test_for_2d_matrix_probe(probe, relative_tolerance = mfmc.default_tolerance):
     details = {mfmc.TYPE_KEY: mfmc.ARRAY_TYPE_2D_MATRIX, mfmc.MATCH_KEY: 0}
     log_likelihood = 0
     #Load element positions etc as an nx3 matrices
@@ -73,20 +75,28 @@ def fn_test_for_2d_matrix_probe(probe, relative_tolerance):
     #Convert to natural coordinates
     (q, v, no_dims, loglikelihood_dim) = mfmc.fn_convert_to_natural_coordinates(p)
      
-    #Likelihood of being 1D array    
+    #Likelihood of being 2D array    
     log_likelihood += loglikelihood_dim[1] # index one because this is for 2D array
+    
+    #Somehow need to figure out which is fast (first, a1) and slow (second, a2) axis. For now ...
+    a1 = 0
+    a2 = 1
+    
+    #sz = [np.linalg.norm(np.dot(np.mean(e1, axis = 0), v))
     
     #Uniformity of pitch
     (pitch, loglikelihood_pitch) = mfmc.fn_estimate_pitch(q)
+    details[mfmc.PITCH_KEY] = [pitch[a1], pitch[a2]]
     log_likelihood += np.sum(loglikelihood_pitch) #must be even pitch in both dims
     
     #Add the details - note numbers are not rounded at this point
     #This needs improving to return 2 element vector for number of elements as it is a matrix array, same for pitch and el-size - rule is that it should all be exactly same as input params!
     details[mfmc.NUMBER_OF_ELEMENTS_KEY] = p.shape[0]
     details[mfmc.FIRST_ELEMENT_POSITION_KEY] = list(p[0, :])
+    details[mfmc.LAST_ELEMENT_POSITION_KEY] = list(p[-1, :])
     e3 = np.cross(np.mean(e1, axis = 0), np.mean(e2, axis = 0))
     details[mfmc.NORMAL_VECTOR_KEY] = e3 / np.linalg.norm(e3)
-    details[mfmc.MATCH_KEY] = np.exp(log_likelihood) * 90
+    details[mfmc.MATCH_KEY] = np.exp(log_likelihood)
     
     return details
 
