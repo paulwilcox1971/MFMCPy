@@ -22,9 +22,14 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = mfmc.default_toleran
     #Analyse element positions
     (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_per_dim) = \
         mfmc.fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
-    print(v)    
-    e1 = v[0]
-    e2 = np.mean(probe['ELEMENT_MINOR'], axis = 0)
+
+    #For 1D probe, active direction (e1) is same as element major axis,
+    #e2 is given by element minor axis and e3 (normal) - but is this right? What
+    #if major and minor are defined the other way around? See spec - these should define probe normal unambigiously
+    #so should get e1 = v[0] then e3 = maj x min and final e2 = e1 x e3
+    e1 = np.mean(probe['ELEMENT_MINOR'], axis = 0)
+    e1 /= np.linalg.norm(e1)
+    e2 = np.mean(probe['ELEMENT_MAJOR'], axis = 0)
     e2 /= np.linalg.norm(e2)
     e3 = np.cross(e2, e1)
     
@@ -36,14 +41,12 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = mfmc.default_toleran
     details[mfmc.FIRST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][0, :])
     details[mfmc.LAST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][-1, :])
     details[mfmc.MID_POINT_POSITION_KEY] = list(np.mean(probe['ELEMENT_POSITION'], axis = 0))
-    details[mfmc.ACTIVE_VECTOR_KEY] = list(v[0])
-    etmp = np.cross(np.mean(probe['ELEMENT_MINOR'], axis = 0), np.mean(probe['ELEMENT_MAJOR'], axis = 0))
-    etmp /= np.linalg.norm(etmp)
-    details[mfmc.PASSIVE_VECTOR_KEY] = np.cross(etmp, v[0])
-    
-    details[mfmc.FIRST_VECTOR_KEY] = e1
-    details[mfmc.SECOND_VECTOR_KEY] = e2
+    details[mfmc.ACTIVE_VECTOR_KEY] = e1
+    details[mfmc.PASSIVE_VECTOR_KEY] = e2
     details[mfmc.NORMAL_VECTOR_KEY] = e3 
+    
+    # details[mfmc.FIRST_VECTOR_KEY] = e1
+    # details[mfmc.SECOND_VECTOR_KEY] = e2
 
     details[mfmc.MATCH_KEY] = np.exp(log_likelihood) * 100
     
@@ -57,6 +60,8 @@ def fn_test_for_2d_matrix_probe(probe, relative_tolerance = mfmc.default_toleran
     (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_per_dim) = \
         mfmc.fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
     
+    #If number of elements can be expressed as product, do it like this otherwise
+    #just return total number of elements because it's probably not a matrix probe
     if np.prod(no_per_dim) != probe['ELEMENT_POSITION'].shape[0] or len(no_per_dim) < 2:
         no_elements = probe['ELEMENT_POSITION'].shape[0]
     else:
@@ -70,16 +75,20 @@ def fn_test_for_2d_matrix_probe(probe, relative_tolerance = mfmc.default_toleran
        
     #Check elements same
     log_likelihood += fn_check_elements_all_same(probe, relative_tolerance)
-
     
+    #For 2D probe, first and second vectors should be from principle components. Normal vector from maj x min
+    e1 = v[0]
+    e2 = v[1]
+    e3 = np.cross(e1, e2)
+
     #Add the details - note numbers are not rounded at this point
     details[mfmc.PITCH_KEY] = pitch
     details[mfmc.NUMBER_OF_ELEMENTS_KEY] = no_elements
     details[mfmc.FIRST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][0, :])
     details[mfmc.LAST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][-1, :])
-    details[mfmc.FIRST_VECTOR_KEY] = v[0] 
-    details[mfmc.SECOND_VECTOR_KEY] = v[1]
-    details[mfmc.NORMAL_VECTOR_KEY] = np.cross(v[0], v[1])
+    details[mfmc.FIRST_VECTOR_KEY] = e1 
+    details[mfmc.SECOND_VECTOR_KEY] = e2
+    details[mfmc.NORMAL_VECTOR_KEY] = e3
     details[mfmc.MATCH_KEY] = np.exp(log_likelihood) * 100
     
     return details

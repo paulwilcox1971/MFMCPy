@@ -152,13 +152,12 @@ def fn_estimate_pitch(q, relative_tolerance = 0.000001):
 def fn_estimate_params_of_point_cloud(p, relative_tolerance = 0.000001):
     (q, v, no_dims, loglikelihood_dim) = fn_convert_to_natural_coordinates(p, relative_tolerance)
     (pitch, loglikelihood_pitch, dim_order, no_unique_coords) = fn_estimate_pitch(q)
-    print(v)
     #If more than 1D, order everything from fastest to slowest
     if no_dims > 1:
         no_unique_coords = no_unique_coords[dim_order]
         q = q[:, dim_order]
         pitch = pitch[dim_order]
-        v = v[:, dim_order]
+        v = v[dim_order, :]
         loglikelihood_pitch = loglikelihood_pitch[dim_order]
     return (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_unique_coords)
      

@@ -9,7 +9,7 @@ import numpy as np
 
 
 xtheta = 0 * np.pi / 180
-ytheta = 30 * np.pi / 180
+ytheta = 0 * np.pi / 180
 ztheta = 0 * np.pi / 180
 el_pos_err = 0#0.0000001e-3
 
@@ -24,6 +24,6 @@ input_params1[mfmc.ACTIVE_VECTOR_KEY] = mfmc.fn_rotate_about_xyz_axes([1, 0, 0],
 probe1 = mfmc.fn_linear_array(input_params1)
 
 p = probe1['ELEMENT_POSITION']
-
-(q, v, no_dims, loglikelihood) = mfmc.fn_convert_to_natural_coordinates(p)
+(q2, v2, no_dims2, loglikelihood_dim, pitch, loglikelihood_pitch, no_unique_coords) = mfmc.fn_estimate_params_of_point_cloud(p)
+print(v2)
 

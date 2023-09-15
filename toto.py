@@ -35,10 +35,13 @@ input_params1[mfmc.ELEMENT_LENGTH_KEY] = 10e-3
 input_params1[mfmc.NUMBER_OF_ELEMENTS_KEY] = 11
 input_params1[mfmc.NORMAL_VECTOR_KEY] = mfmc.fn_rotate_about_xyz_axes([0, 0, 1], xtheta, ytheta, ztheta)
 input_params1[mfmc.ACTIVE_VECTOR_KEY] = mfmc.fn_rotate_about_xyz_axes([1, 0, 0], xtheta, ytheta, ztheta)
+#create
 probe1 = mfmc.fn_linear_array(input_params1)
 probe1['ELEMENT_POSITION'] += np.random.randn(*probe1['ELEMENT_POSITION'].shape) * el_pos_err
+#recover
 probe_details1 = mfmc.fn_test_for_1D_linear_probe(probe1)
 print('')
+mfmc.fn_pretty_print_dictionary(input_params1)
 mfmc.fn_pretty_print_dictionary(probe_details1)
 fn_plot_probe(probe1)
 
@@ -49,15 +52,12 @@ input_params2[mfmc.ELEMENT_SIZE_KEY] = 0.9e-3
 input_params2[mfmc.NUMBER_OF_ELEMENTS_KEY] = 11
 input_params2[mfmc.NORMAL_VECTOR_KEY] = mfmc.fn_rotate_about_xyz_axes([0, 0, 1], xtheta, ytheta, ztheta)
 input_params2[mfmc.FIRST_VECTOR_KEY] = mfmc.fn_rotate_about_xyz_axes([1, 0, 0], xtheta, ytheta, ztheta)
+#create
 probe2 = mfmc.fn_matrix_array(input_params2)
 probe2['ELEMENT_POSITION'] += np.random.randn(*probe2['ELEMENT_POSITION'].shape) * el_pos_err
+#recover
 probe_details2 = mfmc.fn_test_for_2d_matrix_probe(probe2)
 print('')
+mfmc.fn_pretty_print_dictionary(input_params2)
 mfmc.fn_pretty_print_dictionary(probe_details2)
 fn_plot_probe(probe2)
-print('Normals')
-print(input_params1[mfmc.NORMAL_VECTOR_KEY])
-print(probe_details1[mfmc.NORMAL_VECTOR_KEY])
-print('Active')
-print(input_params1[mfmc.ACTIVE_VECTOR_KEY])
-print(probe_details1[mfmc.FIRST_VECTOR_KEY])
