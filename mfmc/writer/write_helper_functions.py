@@ -15,7 +15,8 @@ import mfmc
 def fn_linear_array(input_params):
     default_params = {mfmc.MID_POINT_POSITION_KEY:  (0.0, 0.0, 0.0), 
                       mfmc.NORMAL_VECTOR_KEY:       (0.0, 0.0, 1.0),
-                      mfmc.ACTIVE_VECTOR_KEY:       (1.0, 0.0, 0.0)}
+                      mfmc.ACTIVE_VECTOR_KEY:       (1.0, 0.0, 0.0),
+                      mfmc.CENTRE_FREQUENCY_KEY:    1.0e6}
     for d in default_params.keys():
         if d not in input_params.keys():
             input_params[d] = default_params[d]
@@ -24,12 +25,13 @@ def fn_linear_array(input_params):
     passive_direction = np.cross(input_params[mfmc.NORMAL_VECTOR_KEY], input_params[mfmc.ACTIVE_VECTOR_KEY])
     e1 = np.tile(passive_direction, (input_params[mfmc.NUMBER_OF_ELEMENTS_KEY], 1)) * input_params[mfmc.ELEMENT_LENGTH_KEY] / 2
     e2 = np.tile(input_params[mfmc.ACTIVE_VECTOR_KEY], (input_params[mfmc.NUMBER_OF_ELEMENTS_KEY], 1))* input_params[mfmc.ELEMENT_WIDTH_KEY] / 2
-    return {'ELEMENT_POSITION': p, 'ELEMENT_MAJOR': e1, 'ELEMENT_MINOR': e2}
+    return {'TYPE': 'PROBE', 'ELEMENT_POSITION': p, 'ELEMENT_MAJOR': e1, 'ELEMENT_MINOR': e2, 'CENTRE_FREQUENCY': input_params[mfmc.CENTRE_FREQUENCY_KEY], 'ELEMENT_SHAPE': np.ones(input_params[mfmc.NUMBER_OF_ELEMENTS_KEY])}
 
 def fn_matrix_array(input_params):
     default_params = {mfmc.MID_POINT_POSITION_KEY:  (0.0, 0.0, 0.0), 
                       mfmc.NORMAL_VECTOR_KEY:       (0.0, 0.0, 1.0),
-                      mfmc.FIRST_VECTOR_KEY:       (1.0, 0.0, 0.0)}
+                      mfmc.FIRST_VECTOR_KEY:       (1.0, 0.0, 0.0),
+                      mfmc.CENTRE_FREQUENCY_KEY:    1.0e6}
     for d in default_params.keys():
         if d not in input_params.keys():
             input_params[d] = default_params[d]
@@ -44,7 +46,7 @@ def fn_matrix_array(input_params):
         t2.reshape(nt, 1) * np.array(input_params[mfmc.SECOND_VECTOR_KEY]).reshape(1, 3)
     e1 = np.tile(input_params[mfmc.FIRST_VECTOR_KEY], (nt, 1)) * s[0] / 2
     e2 = np.tile(input_params[mfmc.SECOND_VECTOR_KEY], (nt, 1))* s[1] / 2
-    return {'ELEMENT_POSITION': p, 'ELEMENT_MAJOR': e1, 'ELEMENT_MINOR': e2}
+    return {'TYPE': 'PROBE', 'ELEMENT_POSITION': p, 'ELEMENT_MAJOR': e1, 'ELEMENT_MINOR': e2, 'CENTRE_FREQUENCY': input_params[mfmc.CENTRE_FREQUENCY_KEY], 'ELEMENT_SHAPE': np.ones(input_params[mfmc.NUMBER_OF_ELEMENTS_KEY])}
 
 def fn_expand_if_nesc(x):
     if np.isscalar(x):

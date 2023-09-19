@@ -11,6 +11,7 @@ import mfmc
 spec_fname = 'docs/MFMC Specification 2.0.0.xlsx'
 
 fname = 'Example MFMC files/AS example.mfmc'
+#fname = 'write_example.mfmc'
 
 MFMC = mfmc.fn_open_file(fname)
 

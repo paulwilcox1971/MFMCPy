@@ -5,7 +5,14 @@ Created on Wed Aug 23 16:57:00 2023
 @author: mepdw
 """
 
-#Following are keys used in dictionaries describing array parameters
+"""
+Following are keys used in dictionaries describing array parameters
+
+These are not part of the MFMC specification and can be altered to suit language etc
+
+TODO - another file with the MFMC names defined
+
+"""
 TYPE_KEY = 'Type'
 MATCH_KEY = 'Match (%)'
 NUMBER_OF_ELEMENTS_KEY = 'Number of elements' 
@@ -22,9 +29,12 @@ ELEMENT_LENGTH_KEY = 'Element length (m)'     #size in passive direction for 1D 
 ELEMENT_SIZE_KEY = 'Element size (m)'         #Used for 2D arrays
 FIRST_VECTOR_KEY = 'First vector direction'   #Used for 2D arrays rather than active direction
 SECOND_VECTOR_KEY = 'Second vector direction' #Used for 2D arrays rather than passive direction
+CENTRE_FREQUENCY_KEY = 'Centre frequency (Hz)'
 
 #Following are strings used to defined array types
 ARRAY_TYPE_1D_LINEAR = '1D linear'
 ARRAY_TYPE_2D_MATRIX = '2D matrix'
 
+
+#This is in the wrong file!!
 default_tolerance = 0.000001

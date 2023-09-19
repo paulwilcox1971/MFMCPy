@@ -5,7 +5,8 @@ Created on Wed May 10 23:25:04 2023
 @author: mepdw
 """
 import h5py as h5
-
+import pandas as pd
+import numpy as np
 #MFMC names
 
 SEQUENCE_TYPE = 'SEQUENCE'
@@ -14,6 +15,11 @@ LAW_TYPE = 'LAW'
 H5_PATH_SEPARATOR = '/'
 
 #Various MFMC utility functions
+
+def fn_load_specification(spec_fname):
+    SPEC = pd.read_excel(spec_fname, index_col = 'Name')
+    SPEC.replace(np.nan, None, inplace = True)
+    return SPEC
 
 def fn_open_file(fname, root_path = '/'):
     MFMC = h5.File(fname, 'r')

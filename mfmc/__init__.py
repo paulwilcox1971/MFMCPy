@@ -6,3 +6,4 @@ from .reader.read_helper_functions import * #fn_analyse_probe, fn_pretty_print_d
 from .reader.probe_type_testers import * #fn_analyse_probe, fn_pretty_print_dictionary
 from .viewer.viewer import * #cl_sequence
 from .writer.write_helper_functions import * #fn_linear_array, fn_matrix_array, fn_expand_if_nesc
+from .writer.write_core_functions import *

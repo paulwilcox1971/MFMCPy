@@ -8,6 +8,7 @@ Created on Wed May 10 22:23:04 2023
 import numpy as np
 import pandas as pd
 from ..utils import utils
+#import mfmc
 
 SEPARATOR_STR = '; '
 
@@ -28,10 +29,10 @@ NUMPY_EQUIV_DTYPE = {
     'H5T_STD_REF_OBJ': np.dtype('O')}
 
 
-def fn_load_specification(spec_fname):
-    SPEC = pd.read_excel(spec_fname, index_col = 'Name')
-    SPEC.replace(np.nan, None, inplace = True)
-    return SPEC
+# def fn_load_specification(spec_fname):
+#     SPEC = pd.read_excel(spec_fname, index_col = 'Name')
+#     SPEC.replace(np.nan, None, inplace = True)
+#     return SPEC
 
 def fn_check_sequence(MFMC, SPEC, sequence_name):
     check_log = []
