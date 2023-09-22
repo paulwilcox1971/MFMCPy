@@ -16,10 +16,10 @@ H5_PATH_SEPARATOR = '/'
 
 #Various MFMC utility functions
 
-def fn_load_specification(spec_fname):
-    SPEC = pd.read_excel(spec_fname, index_col = 'Name')
-    SPEC.replace(np.nan, None, inplace = True)
-    return SPEC
+# def fn_load_specification(spec_fname):
+#     SPEC = pd.read_excel(spec_fname, index_col = 'Name')
+#     SPEC.replace(np.nan, None, inplace = True)
+#     return SPEC
 
 def fn_open_file(fname, root_path = '/'):
     MFMC = h5.File(fname, 'r')

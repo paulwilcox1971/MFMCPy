@@ -11,11 +11,11 @@ Created on Fri Jul 14 17:31:59 2023
 import numpy as np
 import sys
 sys.path.append('..') #So mfmc can be found in parent directory
-import mfmc
+
+from .. import utils
 
 
-
-def fn_test_for_1D_linear_probe(probe, relative_tolerance = mfmc.default_tolerance):
+def fn_test_for_1D_linear_probe(probe, relative_tolerance = utils.default_tolerance):
     details = {mfmc.TYPE_KEY: mfmc.ARRAY_TYPE_1D_LINEAR, mfmc.MATCH_KEY: 0}
     log_likelihood = 0
     
@@ -52,7 +52,7 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = mfmc.default_toleran
     
     return details
 
-def fn_test_for_2d_matrix_probe(probe, relative_tolerance = mfmc.default_tolerance):
+def fn_test_for_2d_matrix_probe(probe, relative_tolerance = utils.default_tolerance):
     details = {mfmc.TYPE_KEY: mfmc.ARRAY_TYPE_2D_MATRIX, mfmc.MATCH_KEY: 0}
     log_likelihood = 0
     

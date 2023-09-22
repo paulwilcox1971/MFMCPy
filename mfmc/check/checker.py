@@ -12,15 +12,7 @@ from ..utils import utils
 
 SEPARATOR_STR = '; '
 
-SPEC_TYPE_PREFIX = {
-    utils.SEQUENCE_TYPE: '{sequence}' + utils.H5_PATH_SEPARATOR, 
-    utils.PROBE_TYPE: '{probe}' + utils.H5_PATH_SEPARATOR, 
-    utils.LAW_TYPE: '{law}' + utils.H5_PATH_SEPARATOR}
 
-SPEC_TYPE_COUNTER = {
-    utils.SEQUENCE_TYPE: '<m>', 
-    utils.PROBE_TYPE: '<p>', 
-    utils.LAW_TYPE: '<k>'}
 
 NUMPY_EQUIV_DTYPE = {
     'H5T_STRING': np.string_,
@@ -89,11 +81,7 @@ def fn_check_sequence(MFMC, SPEC, sequence_name):
     return (check_log, size_table, err_list)
 
 
-def fn_get_relevant_part_of_spec(SPEC, MFMC_type):
-    prefix = SPEC_TYPE_PREFIX[MFMC_type]
-    spec = SPEC.loc[SPEC.index[:].str.startswith(prefix),:]
-    spec.index = spec.index.str.replace(prefix, '', regex = False)
-    return spec
+
     
 
 def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, check_log = [], size_table = {}, err_list = []):

@@ -7,12 +7,10 @@ Created on Wed Aug 23 16:57:00 2023
 
 """
 Following are keys used in dictionaries describing array parameters
-
 These are not part of the MFMC specification and can be altered to suit language etc
-
-TODO - another file with the MFMC names defined
-
 """
+
+#Probe parameters used as dictionary keys
 TYPE_KEY = 'Type'
 MATCH_KEY = 'Match (%)'
 NUMBER_OF_ELEMENTS_KEY = 'Number of elements' 
@@ -31,10 +29,7 @@ FIRST_VECTOR_KEY = 'First vector direction'   #Used for 2D arrays rather than ac
 SECOND_VECTOR_KEY = 'Second vector direction' #Used for 2D arrays rather than passive direction
 CENTRE_FREQUENCY_KEY = 'Centre frequency (Hz)'
 
-#Following are strings used to defined array types
-ARRAY_TYPE_1D_LINEAR = '1D linear'
-ARRAY_TYPE_2D_MATRIX = '2D matrix'
+#Types of probe
+PROBE_TYPE_1D_LINEAR = '1D linear'
+PROBE_TYPE_2D_MATRIX = '2D matrix'
 
-
-#This is in the wrong file!!
-default_tolerance = 0.000001
