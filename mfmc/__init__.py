@@ -11,7 +11,7 @@
 #from .utils.defaults import *
 
 #from .utils import *
-import mfmc.utils
+#import mfmc.utils
 import mfmc.write
 import mfmc.read
 import mfmc.check
@@ -22,5 +22,5 @@ import mfmc.spec
 
 #SPEC = spec.fn_load_specification(mfmc.utils.default_spec_fname)
 
-from .strs.mfmc_fieldnames import *
-from .strs.string_table import *
+# from .strs.mfmc_fieldnames import *
+# from .strs.string_table import *
