@@ -30,4 +30,6 @@ def fn_get_relevant_part_of_spec(spec, MFMC_type):
     subspec.index = subspec.index.str.replace(prefix, '', regex = False)
     return subspec
 
-SPEC = fn_load_specification(utils.default_spec_fname)
+default_spec = fn_load_specification(utils.default_spec_fname)
+
+expandable_dims = ['N_M', 'N_F<m>', 'N_B<m>']
