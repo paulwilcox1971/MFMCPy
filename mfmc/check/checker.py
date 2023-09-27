@@ -8,7 +8,13 @@ Created on Wed May 10 22:23:04 2023
 import numpy as np
 import pandas as pd
 from ..utils import utils
-#import mfmc
+
+from ..utils import * #all functions in utils are accessible without prefix
+from ..spec import default_spec, fn_get_relevant_part_of_spec, fn_parse_shape_string_in_spec, SPEC_TYPE_PREFIX, SPEC_TYPE_COUNTER
+from ..read import fn_open_file_for_reading
+from ..strs.mfmc_fieldnames import *
+from ..strs.string_table import *
+
 
 SEPARATOR_STR = '; '
 
@@ -20,43 +26,37 @@ NUMPY_EQUIV_DTYPE = {
     'H5T_INTEGER': np.integer,
     'H5T_STD_REF_OBJ': np.dtype('O')}
 
-
-# def fn_load_specification(spec_fname):
-#     SPEC = pd.read_excel(spec_fname, index_col = 'Name')
-#     SPEC.replace(np.nan, None, inplace = True)
-#     return SPEC
-
-def fn_check_sequence(MFMC, SPEC, sequence_name):
+def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     check_log = []
     size_table = {}
     err_list = []
     
     #Check it is a sequence first
-    if 'TYPE' not in list(sequence_name.attrs) or utils.fn_str_to_utf(sequence_name.attrs["TYPE"]) != utils.SEQUENCE_TYPE:
+    if 'TYPE' not in list(sequence_name.attrs) or utils.fn_str_to_utf(sequence_name.attrs[H5_TYPE]) != H5_SEQUENCE:
         err_list.append('Object is not MFMC sequence')
         return (check_log, size_table, err_list)
     
     #First check sequence group itself
-    sequence_specification = fn_get_relevant_part_of_spec(SPEC, utils.SEQUENCE_TYPE)
+    sequence_specification = fn_get_relevant_part_of_spec(spec, H5_SEQUENCE)
     #return (check_log, size_table, err_list)
-    (check_log, size_table, err_list, objects_referenced_by_sequence) = fn_check_mfmc_group_against_specification(MFMC, SPEC, sequence_name, sequence_specification, check_log, size_table, err_list)
+    (check_log, size_table, err_list, objects_referenced_by_sequence) = fn_check_mfmc_group_against_specification(MFMC, spec, sequence_name, sequence_specification, check_log, size_table, err_list)
 
     #Second, check all probe groups in sequence's probe list
-    probe_list_from_sequence = objects_referenced_by_sequence['PROBE_LIST']
-    probe_spec = fn_get_relevant_part_of_spec(SPEC, utils.PROBE_TYPE)
+    probe_list_from_sequence = objects_referenced_by_sequence[H5_PROBE_LIST]
+    probe_spec = fn_get_relevant_part_of_spec(spec, utils.PROBE_TYPE)
     #print(probe_list_from_sequence)
     #print(size_table)
     for probe in probe_list_from_sequence:
-        (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, SPEC, MFMC[probe], probe_spec, check_log, size_table, err_list)
+        (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[probe], probe_spec, check_log, size_table, err_list)
 
     #Third, check all law groups in sequence's transmit and receive laws, and 
     #log all the probes referenced by laws
-    law_list_from_sequence = list(set(objects_referenced_by_sequence['TRANSMIT_LAW'] + objects_referenced_by_sequence['RECEIVE_LAW']))
+    law_list_from_sequence = list(set(objects_referenced_by_sequence[H5_TRANSMIT_LAW] + objects_referenced_by_sequence[H5_RECEIVE_LAW]))
     probes_referenced_by_laws = []
-    law_spec = fn_get_relevant_part_of_spec(SPEC, utils.LAW_TYPE)
+    law_spec = fn_get_relevant_part_of_spec(spec, utils.LAW_TYPE)
     for law in law_list_from_sequence:
-        (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, SPEC, MFMC[law], law_spec, check_log, size_table, err_list)
-        probes_referenced_by_laws += objects_referenced['PROBE']
+        (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[law], law_spec, check_log, size_table, err_list)
+        probes_referenced_by_laws += objects_referenced[H5_PROBE]
     probes_referenced_by_laws = list(set(probes_referenced_by_laws))
     
     #Check all probes referenced by laws are in sequence's probe list
@@ -68,11 +68,11 @@ def fn_check_sequence(MFMC, SPEC, sequence_name):
     #return (check_log, size_table, err_list)
     #Final thing - check element indexing in laws is range
     for law in law_list_from_sequence:
-        probes = [utils.fn_str_to_utf(MFMC[i].name) for i in MFMC[law]['PROBE']]
+        probes = [utils.fn_str_to_utf(MFMC[i].name) for i in MFMC[law][H5_PROBE]]
         #print(size_table)
         #print(probes)
         max_vals = [size_table['N_E<' + p + '>'] for p in probes]
-        vals = np.atleast_1d(MFMC[law]['ELEMENT'])
+        vals = np.atleast_1d(MFMC[law][H5_ELEMENT])
         for (p, v, m, i) in zip(probes, vals, max_vals, range(len(probes))):
             if v < 1 or v > m:
                 err_list.append('ELEMENT[' + str(i + 1) + '] in law ' + utils.fn_name_from_path(MFMC[law].name) + ': refers to elements outside range of probe ' + utils.fn_name_from_path(p))
@@ -150,10 +150,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
                 
         #2. Check dimensions of datafield
         if hasattr(item, 'shape'):
-            shape_tuple = tuple(reversed(item.shape))
-            if not len(shape_tuple):
-                #for scalars
-                shape_tuple = (1, )
+            shape_tuple = item.shape
             shape_str = spec.loc[name, 'Size or content']
             if utils.fn_str_to_utf(mfmc_group.attrs['TYPE']) in SPEC_TYPE_COUNTER.keys():
                 shape_str = shape_str.replace(SPEC_TYPE_COUNTER[utils.fn_str_to_utf(mfmc_group.attrs['TYPE'])], '<' + mfmc_group.name + '>')
@@ -183,11 +180,10 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
     return (check_log, size_table, err_list, objects_referenced)    
                 
 def fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table):
-    #print(shape_tuple, shape_str, size_table)
-    shape_str = shape_str.replace(' ', '')
-    shape_str = shape_str.replace('[', '')
-    shape_str = shape_str.replace(']', '')
-    shape_str = shape_str.split(',')
+    shape_str = fn_parse_shape_string_in_spec(shape_str)
+    #Special case of scalar values that still need to be compared to spec
+    if not len(shape_tuple):
+        shape_tuple = (1, )
     if len(shape_str) != len(shape_tuple):
         err = 'number of dimension mismatch ('+ str(len(shape_tuple)) + ' should be ' + str(len(shape_str)) + ')'
         return (size_table, err)

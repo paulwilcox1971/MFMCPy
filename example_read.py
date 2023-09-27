@@ -7,7 +7,7 @@ Created on Mon Sep 25 16:54:24 2023
 
 import mfmc.read as m
 
-fname = 'write_example8.mfmc'
+fname = 'write_example1.mfmc'
 
 #fname = 'Example MFMC files\AS example.mfmc'
 

@@ -8,7 +8,7 @@ import os
 import h5py as h5
 
 from ..utils import *
-from ..spec import *
+from ..spec import default_spec, fn_get_relevant_part_of_spec
 from ..strs.mfmc_fieldnames import *
 from ..strs.string_table import *
 
@@ -54,8 +54,12 @@ def fn_read_sequence_data(MFMC, group, spec = default_spec):
 def fn_read_frame(MFMC, group, i = -1):
     if H5_MFMC_DATA in MFMC[group].keys():
         frame_re = MFMC[group][H5_MFMC_DATA][i, :, :]
+    else:
+        frame_re = 0
     if H5_MFMC_DATA_IM in MFMC[group].keys():
         frame_im = MFMC[group][H5_MFMC_DATA_IM][i, :, :]
+    else:
+        frame_im = 0
     return frame_re + 1j * frame_im
 #------------------------------------------------------------------------------
 

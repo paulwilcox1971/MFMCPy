@@ -37,6 +37,9 @@ def fn_receive_laws_for_sequence(MFMC, sequence):
 
 
 def fn_unique_h5_ref_list(MFMC, ref_list):
+    # if type(ref_list) is not list:
+    #     return MFMC[ref_list]
+    # else:
     return [MFMC[r].name for r in list(set([MFMC[i].name for i in ref_list]))]
 
 def fn_name_from_path(path):

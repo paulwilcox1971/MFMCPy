@@ -30,6 +30,17 @@ def fn_get_relevant_part_of_spec(spec, MFMC_type):
     subspec.index = subspec.index.str.replace(prefix, '', regex = False)
     return subspec
 
+def fn_parse_shape_string_in_spec(shape_str):
+    #Parse and reverse shape_str
+    shape_str = shape_str.replace(' ', '')
+    shape_str = shape_str.replace('[', '')
+    shape_str = shape_str.replace(']', '')
+    shape_str = shape_str.split(',')
+    #It needs to be reverse because spec gives shape in col-major order but 
+    #shapes in Numpy are in row-major order
+    shape_str = tuple(reversed(shape_str)) 
+    return shape_str
+
 default_spec = fn_load_specification(utils.default_spec_fname)
 
 expandable_dims = ['N_M', 'N_F<m>', 'N_B<m>']
