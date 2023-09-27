@@ -100,21 +100,49 @@ def fn_add_sequence(MFMC, seq, name = None, warn_if_seq_exists = True, spec = de
         return []
     
 def fn_add_frame(MFMC, seq_name, frame, spec = default_spec):
-    #Need to use dset.resize to increment first (expandable) dim by 1 then set last layer to new frame
-    #Note that this function also needs to handle new probe positions - all indexed probe positions must be within dims of existing data or new data provided
+    """Adds frame(s) to existing sequence.
+    
+    frame must be dictionary with key MFMC_DATA at minimum. Optional keys are
+    H5_PROBE_POSITION - default= [0,0,0]
+    H5_PROBE_X_DIRECTION - default= [1,0,0]
+    H5_PROBE_Y_DIRECTION - default= [0,1,0]
+    PROBE_PLACEMENT_INDEX - default = ones of correct shape
+    PROBE_PLACEMENT_INDEX should be index into the supplied H5_PROBE_POSITION 
+    etc. arrays (1st row = index 1). These will be incremented when added to 
+    file so that they point to corresponding rows in overall PROBE_POSITION etc. 
+    arrays in file
+    
+    """
+    if H5_MFMC_DATA not in frame.keys():
+        print('Error: MFMC_DATA data missing from frame')
+        return False
+    if H5_PROBE_PLACEMENT_INDEX in MFMC[seq_name].keys():
+        current_max_placement_index = np.max(MFMC[seq_name][H5_PROBE_PLACEMENT_INDEX][()])
+    else:
+        current_max_placement_index = 0
+    #print(current_max_placement_index)
+    no_frames = frame[H5_MFMC_DATA].shape[0]
+    no_ascans = MFMC[seq_name][H5_TRANSMIT_LAW].shape[0]
+    no_probes = MFMC[seq_name][H5_PROBE_LIST].shape[0]
+    if H5_PROBE_PLACEMENT_INDEX not in frame.keys():
+        frame[H5_PROBE_PLACEMENT_INDEX] = np.tile(np.ones((1, no_ascans)), (no_frames, 1))
+    if H5_PROBE_POSITION not in frame.keys():
+        frame[H5_PROBE_POSITION] = np.tile(np.array([0.0, 0.0, 0.0]), (1, no_probes, 1))
+    if H5_PROBE_X_DIRECTION not in frame.keys():
+        frame[H5_PROBE_X_DIRECTION] = np.tile(np.array([1.0, 0.0, 0.0]), (1, no_probes, 1))
+    if H5_PROBE_Y_DIRECTION not in frame.keys():
+        frame[H5_PROBE_Y_DIRECTION] = np.tile(np.array([0.0, 1.0, 0.0]), (1, no_probes, 1))
     spec = fn_get_relevant_part_of_spec(spec, H5_SEQUENCE)
-    fn_append_or_create_dataset(MFMC, seq_name, H5_MFMC_DATA, np.random.randn(1, 17, 100), spec)
     
-    #Need a list of expandable dims so these are picked up automatically when dsets created
+    #print(frame[H5_PROBE_PLACEMENT_INDEX])
+    frame[H5_PROBE_PLACEMENT_INDEX] += current_max_placement_index
+    if  frame[H5_PROBE_PLACEMENT_INDEX].shape[0] != no_frames:
+        print('Error: first dimensions of ' + H5_MFMC_DATA +' and ' + H5_PROBE_PLACEMENT_INDEX + 'are inconsistent')
+        return False
+    for i in frame.keys():
+        fn_append_or_create_dataset(MFMC, seq_name, i, frame[i], spec)
     
-    #Following works and shows method to use. However, all expandable variables
-    #need to be chunked when created. As this is the case for all ones associated
-    #with adding a frame, could make special write structure function here
-    # old_size = MFMC[seq_name][H5_MFMC_DATA].shape
-    # new_size = [old_size[0] + 1, old_size[1], old_size[2]]
-    # MFMC[seq_name][H5_MFMC_DATA].resize(new_size)
-    # MFMC[seq_name][H5_MFMC_DATA][-1, :, :] = frame[H5_MFMC_DATA]
-    return
+    return True
 #------------------------------------------------------------------------------
 
 def fn_append_or_create_dataset(MFMC, group, name, data, spec):
@@ -123,7 +151,13 @@ def fn_append_or_create_dataset(MFMC, group, name, data, spec):
         return
     shape_str = fn_parse_shape_string_in_spec(spec.loc[name, 'Size or content'])
     if name in MFMC[group].keys():
-        #Append
+        size = list(MFMC[group][name].shape)
+        # print('Current size', size)
+        size[0] += data.shape[0]
+        # print('New size', size)
+        # print('New data size', data.shape)
+        MFMC[group][name].resize(size)
+        MFMC[group][name][-data.shape[0]:] = data
         pass
     else:
         #Create with expandable dimension
@@ -135,7 +169,6 @@ def fn_append_or_create_dataset(MFMC, group, name, data, spec):
         chunks[0] = 1
         maxshape = list(data.shape)
         maxshape[0] = None
-        print(chunks, maxshape)
         MFMC[group].create_dataset(name, data = data, dtype = dtype, chunks = tuple(chunks), maxshape = tuple(maxshape))
 
 def fn_write_structure(MFMC, group, var, spec, skip_fields = []):
@@ -148,18 +181,6 @@ def fn_write_structure(MFMC, group, var, spec, skip_fields = []):
         if i in var.keys():
             #Write to file according to spec
             if spec.loc[i, 'D or A'] == 'D':
-                #Dataset
-                # shape_str = fn_parse_shape_string_in_spec(spec.loc[i, 'Size or content'])
-                # if i == H5_MFMC_DATA or i == H5_MFMC_DATA_IM:
-                #     dtype = var[i].dtype #Special case for the actual data which will be stored in whatever form it comes in
-                #     chunks = (1, var[i].shape[1], var[i].shape[2])
-                #     maxshape = (None, var[i].shape[1], var[i].shape[2])
-                #     print('xxx')
-                # else:
-                    # dtype = NUMPY_EQUIV_DTYPE_FOR_WRITE[spec.loc[i, 'Class']]
-                    # chunks = None
-                    # maxshape = None
-                    # MFMC[group].create_dataset(i, data = var[i], dtype = dtype, chunks = chunks, maxshape = maxshape)
                 MFMC[group].create_dataset(i, data = var[i], dtype = NUMPY_EQUIV_DTYPE_FOR_WRITE[spec.loc[i, 'Class']])
             else:
                 #Attribute
