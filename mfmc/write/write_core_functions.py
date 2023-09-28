@@ -9,10 +9,11 @@ import os
 import numpy as np
 import h5py as h5
 
-from ..utils import * #all functions in utils are accessible without prefix
+from ..utils import fn_hdf5_group_refs_by_type  
 from ..spec import default_spec, fn_get_relevant_part_of_spec, fn_parse_shape_string_in_spec
-from ..strs.mfmc_fieldnames import *
-from ..strs.string_table import *
+
+from ..strs import h5_keys
+from ..strs import eng_keys
 
 NUMPY_EQUIV_DTYPE_FOR_WRITE = {
     'H5T_STRING': np.string_,
@@ -49,13 +50,13 @@ def fn_add_probe(MFMC, probe, name = None, warn_if_probe_exists = True, spec = d
     If no name specified, next free default name will be used.
     If name specified exists already, it will be overwritten"""
     if name == None:
-        name = fn_next_free_name(MFMC, H5_PROBE)
+        name = fn_next_free_name(MFMC, h5_keys.PROBE)
     if name in MFMC.keys():
         if warn_if_probe_exists and input('Probe exists: overwrite (y/n)? ').upper() != 'Y':
             return []
         del MFMC[name]
     grp = MFMC.create_group(name)
-    if fn_write_structure(MFMC, name, probe, fn_get_relevant_part_of_spec(spec, H5_PROBE)):
+    if fn_write_structure(MFMC, name, probe, fn_get_relevant_part_of_spec(spec, h5_keys.PROBE)):
         return grp
     else:
         return []
@@ -67,13 +68,13 @@ def fn_add_law(MFMC, law, name = None, warn_if_law_exists = True, spec = default
     If no name specified, next free default name will be used.
     If name specified exists already, it will be overwritten"""
     if name == None:
-        name = fn_next_free_name(MFMC, H5_LAW)
+        name = fn_next_free_name(MFMC, h5_keys.LAW)
     if name in MFMC.keys():
         if warn_if_law_exists and input('Law exists: overwrite (y/n)? ').upper() != 'Y':
             return []
         del MFMC[name]
     grp = MFMC.create_group(name)
-    if fn_write_structure(MFMC, name, law, fn_get_relevant_part_of_spec(spec, H5_LAW)):
+    if fn_write_structure(MFMC, name, law, fn_get_relevant_part_of_spec(spec, h5_keys.LAW)):
         return grp
     else:
         return []
@@ -85,7 +86,7 @@ def fn_add_sequence(MFMC, seq, name = None, warn_if_seq_exists = True, spec = de
     laws referenced by sequence tx/rx laws must be already in file
     """
     if name == None:
-        name = fn_next_free_name(MFMC, H5_SEQUENCE)
+        name = fn_next_free_name(MFMC, h5_keys.SEQUENCE)
     if name in MFMC.keys():
         if warn_if_seq_exists and input('Sequence exists: overwrite (y/n)? ').upper() != 'Y':
             return []
@@ -93,8 +94,8 @@ def fn_add_sequence(MFMC, seq, name = None, warn_if_seq_exists = True, spec = de
     grp = MFMC.create_group(name)
     if fn_write_structure(
             MFMC, name, seq, 
-            fn_get_relevant_part_of_spec(spec, H5_SEQUENCE), 
-            skip_fields = [H5_MFMC_DATA, H5_MFMC_DATA_IM, H5_PROBE_PLACEMENT_INDEX, H5_PROBE_POSITION, H5_PROBE_X_DIRECTION, H5_PROBE_Y_DIRECTION]):
+            fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE), 
+            skip_fields = [h5_keys.MFMC_DATA, h5_keys.MFMC_DATA_IM, h5_keys.PROBE_PLACEMENT_INDEX, h5_keys.PROBE_POSITION, h5_keys.PROBE_X_DIRECTION, h5_keys.PROBE_Y_DIRECTION]):
         return grp
     else:
         return []
@@ -103,41 +104,41 @@ def fn_add_frame(MFMC, seq_name, frame, spec = default_spec):
     """Adds frame(s) to existing sequence.
     
     frame must be dictionary with key MFMC_DATA at minimum. Optional keys are
-    H5_PROBE_POSITION - default= [0,0,0]
-    H5_PROBE_X_DIRECTION - default= [1,0,0]
-    H5_PROBE_Y_DIRECTION - default= [0,1,0]
+    h5_keys.PROBE_POSITION - default= [0,0,0]
+    h5_keys.PROBE_X_DIRECTION - default= [1,0,0]
+    h5_keys.PROBE_Y_DIRECTION - default= [0,1,0]
     PROBE_PLACEMENT_INDEX - default = ones of correct shape
-    PROBE_PLACEMENT_INDEX should be index into the supplied H5_PROBE_POSITION 
+    PROBE_PLACEMENT_INDEX should be index into the supplied h5_keys.PROBE_POSITION 
     etc. arrays (1st row = index 1). These will be incremented when added to 
     file so that they point to corresponding rows in overall PROBE_POSITION etc. 
     arrays in file
     
     """
-    if H5_MFMC_DATA not in frame.keys():
+    if h5_keys.MFMC_DATA not in frame.keys():
         print('Error: MFMC_DATA data missing from frame')
         return False
-    if H5_PROBE_PLACEMENT_INDEX in MFMC[seq_name].keys():
-        current_max_placement_index = np.max(MFMC[seq_name][H5_PROBE_PLACEMENT_INDEX][()])
+    if h5_keys.PROBE_PLACEMENT_INDEX in MFMC[seq_name].keys():
+        current_max_placement_index = np.max(MFMC[seq_name][h5_keys.PROBE_PLACEMENT_INDEX][()])
     else:
         current_max_placement_index = 0
     #print(current_max_placement_index)
-    no_frames = frame[H5_MFMC_DATA].shape[0]
-    no_ascans = MFMC[seq_name][H5_TRANSMIT_LAW].shape[0]
-    no_probes = MFMC[seq_name][H5_PROBE_LIST].shape[0]
-    if H5_PROBE_PLACEMENT_INDEX not in frame.keys():
-        frame[H5_PROBE_PLACEMENT_INDEX] = np.tile(np.ones((1, no_ascans)), (no_frames, 1))
-    if H5_PROBE_POSITION not in frame.keys():
-        frame[H5_PROBE_POSITION] = np.tile(np.array([0.0, 0.0, 0.0]), (1, no_probes, 1))
-    if H5_PROBE_X_DIRECTION not in frame.keys():
-        frame[H5_PROBE_X_DIRECTION] = np.tile(np.array([1.0, 0.0, 0.0]), (1, no_probes, 1))
-    if H5_PROBE_Y_DIRECTION not in frame.keys():
-        frame[H5_PROBE_Y_DIRECTION] = np.tile(np.array([0.0, 1.0, 0.0]), (1, no_probes, 1))
-    spec = fn_get_relevant_part_of_spec(spec, H5_SEQUENCE)
+    no_frames = frame[h5_keys.MFMC_DATA].shape[0]
+    no_ascans = MFMC[seq_name][h5_keys.TRANSMIT_LAW].shape[0]
+    no_probes = MFMC[seq_name][h5_keys.PROBE_LIST].shape[0]
+    if h5_keys.PROBE_PLACEMENT_INDEX not in frame.keys():
+        frame[h5_keys.PROBE_PLACEMENT_INDEX] = np.tile(np.ones((1, no_ascans)), (no_frames, 1))
+    if h5_keys.PROBE_POSITION not in frame.keys():
+        frame[h5_keys.PROBE_POSITION] = np.tile(np.array([0.0, 0.0, 0.0]), (1, no_probes, 1))
+    if h5_keys.PROBE_X_DIRECTION not in frame.keys():
+        frame[h5_keys.PROBE_X_DIRECTION] = np.tile(np.array([1.0, 0.0, 0.0]), (1, no_probes, 1))
+    if h5_keys.PROBE_Y_DIRECTION not in frame.keys():
+        frame[h5_keys.PROBE_Y_DIRECTION] = np.tile(np.array([0.0, 1.0, 0.0]), (1, no_probes, 1))
+    spec = fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE)
     
-    #print(frame[H5_PROBE_PLACEMENT_INDEX])
-    frame[H5_PROBE_PLACEMENT_INDEX] += current_max_placement_index
-    if  frame[H5_PROBE_PLACEMENT_INDEX].shape[0] != no_frames:
-        print('Error: first dimensions of ' + H5_MFMC_DATA +' and ' + H5_PROBE_PLACEMENT_INDEX + 'are inconsistent')
+    #print(frame[h5_keys.PROBE_PLACEMENT_INDEX])
+    frame[h5_keys.PROBE_PLACEMENT_INDEX] += current_max_placement_index
+    if  frame[h5_keys.PROBE_PLACEMENT_INDEX].shape[0] != no_frames:
+        print('Error: first dimensions of ' + h5_keys.MFMC_DATA +' and ' + h5_keys.PROBE_PLACEMENT_INDEX + 'are inconsistent')
         return False
     for i in frame.keys():
         fn_append_or_create_dataset(MFMC, seq_name, i, frame[i], spec)
@@ -161,7 +162,7 @@ def fn_append_or_create_dataset(MFMC, group, name, data, spec):
         pass
     else:
         #Create with expandable dimension
-        if name == H5_MFMC_DATA or name == H5_MFMC_DATA_IM:
+        if name == h5_keys.MFMC_DATA or name == h5_keys.MFMC_DATA_IM:
             dtype = data.dtype #Special case for the actual data which will be stored in whatever form it comes in
         else:
             dtype = NUMPY_EQUIV_DTYPE_FOR_WRITE[spec.loc[name, 'Class']]
@@ -193,7 +194,7 @@ def fn_write_structure(MFMC, group, var, spec, skip_fields = []):
 
 def fn_next_free_name(MFMC, type):
     """Returns next free name for MFMC group of type specified"""
-    prefix = H5_DEFAULT_PREFIX[type]
+    prefix = h5_keys.DEFAULT_PREFIX[type]
     tmp = fn_hdf5_group_refs_by_type(MFMC, type)
     i = 1
     while prefix + '%i' % i in tmp:

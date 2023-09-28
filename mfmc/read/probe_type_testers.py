@@ -10,18 +10,18 @@ Created on Fri Jul 14 17:31:59 2023
 
 import numpy as np
 import sys
-sys.path.append('..') #So mfmc can be found in parent directory
 
 from .. import utils
+from ..strs import eng_keys
 
 
 def fn_test_for_1D_linear_probe(probe, relative_tolerance = utils.default_tolerance):
-    details = {mfmc.TYPE_KEY: mfmc.ARRAY_TYPE_1D_LINEAR, mfmc.MATCH_KEY: 0}
+    details = {eng_keys.TYPE: eng_keys.ARRAY_TYPE_1D_LINEAR, eng_keys.MATCH: 0}
     log_likelihood = 0
     
     #Analyse element positions
     (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_per_dim) = \
-        mfmc.fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
+        eng_keys.fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
 
     #For 1D probe, active direction (e1) is same as element major axis,
     #e2 is given by element minor axis and e3 (normal) - but is this right? What
@@ -34,31 +34,31 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = utils.default_tolera
     e3 = np.cross(e2, e1)
     
     #Add the details - note numbers are not rounded at this point
-    details[mfmc.NUMBER_OF_ELEMENTS_KEY] = probe['ELEMENT_POSITION'].shape[0]
-    details[mfmc.PITCH_KEY] = pitch[0]
-    details[mfmc.ELEMENT_LENGTH_KEY] = np.mean(np.linalg.norm(probe['ELEMENT_MAJOR'], axis = 1)) * 2
-    details[mfmc.ELEMENT_WIDTH_KEY] = np.mean(np.linalg.norm(probe['ELEMENT_MINOR'], axis = 1)) * 2
-    details[mfmc.FIRST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][0, :])
-    details[mfmc.LAST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][-1, :])
-    details[mfmc.MID_POINT_POSITION_KEY] = list(np.mean(probe['ELEMENT_POSITION'], axis = 0))
-    details[mfmc.ACTIVE_VECTOR_KEY] = e1
-    details[mfmc.PASSIVE_VECTOR_KEY] = e2
-    details[mfmc.NORMAL_VECTOR_KEY] = e3 
+    details[eng_keys.NUMBER_OF_ELEMENTS] = probe['ELEMENT_POSITION'].shape[0]
+    details[eng_keys.PITCH] = pitch[0]
+    details[eng_keys.ELEMENT_LENGTH] = np.mean(np.linalg.norm(probe['ELEMENT_MAJOR'], axis = 1)) * 2
+    details[eng_keys.ELEMENT_WIDTH] = np.mean(np.linalg.norm(probe['ELEMENT_MINOR'], axis = 1)) * 2
+    details[eng_keys.FIRST_ELEMENT_POSITION] = list(probe['ELEMENT_POSITION'][0, :])
+    details[eng_keys.LAST_ELEMENT_POSITION] = list(probe['ELEMENT_POSITION'][-1, :])
+    details[eng_keys.MID_POINT_POSITION] = list(np.mean(probe['ELEMENT_POSITION'], axis = 0))
+    details[eng_keys.ACTIVE_VECTOR] = e1
+    details[eng_keys.PASSIVE_VECTOR] = e2
+    details[eng_keys.NORMAL_VECTOR] = e3 
     
-    # details[mfmc.FIRST_VECTOR_KEY] = e1
-    # details[mfmc.SECOND_VECTOR_KEY] = e2
+    # details[eng_keys.FIRST_VECTOR] = e1
+    # details[eng_keys.SECOND_VECTOR] = e2
 
-    details[mfmc.MATCH_KEY] = np.exp(log_likelihood) * 100
+    details[eng_keys.MATCH] = np.exp(log_likelihood) * 100
     
     return details
 
 def fn_test_for_2d_matrix_probe(probe, relative_tolerance = utils.default_tolerance):
-    details = {mfmc.TYPE_KEY: mfmc.ARRAY_TYPE_2D_MATRIX, mfmc.MATCH_KEY: 0}
+    details = {eng_keys.TYPE: eng_keys.ARRAY_TYPE_2D_MATRIX, eng_keys.MATCH: 0}
     log_likelihood = 0
     
     #Analyse element positions
     (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_per_dim) = \
-        mfmc.fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
+        eng_keys.fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
     
     #If number of elements can be expressed as product, do it like this otherwise
     #just return total number of elements because it's probably not a matrix probe
@@ -82,14 +82,14 @@ def fn_test_for_2d_matrix_probe(probe, relative_tolerance = utils.default_tolera
     e3 = np.cross(e1, e2)
 
     #Add the details - note numbers are not rounded at this point
-    details[mfmc.PITCH_KEY] = pitch
-    details[mfmc.NUMBER_OF_ELEMENTS_KEY] = no_elements
-    details[mfmc.FIRST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][0, :])
-    details[mfmc.LAST_ELEMENT_POSITION_KEY] = list(probe['ELEMENT_POSITION'][-1, :])
-    details[mfmc.FIRST_VECTOR_KEY] = e1 
-    details[mfmc.SECOND_VECTOR_KEY] = e2
-    details[mfmc.NORMAL_VECTOR_KEY] = e3
-    details[mfmc.MATCH_KEY] = np.exp(log_likelihood) * 100
+    details[eng_keys.PITCH] = pitch
+    details[eng_keys.NUMBER_OF_ELEMENTS] = no_elements
+    details[eng_keys.FIRST_ELEMENT_POSITION] = list(probe['ELEMENT_POSITION'][0, :])
+    details[eng_keys.LAST_ELEMENT_POSITION] = list(probe['ELEMENT_POSITION'][-1, :])
+    details[eng_keys.FIRST_VECTOR] = e1 
+    details[eng_keys.SECOND_VECTOR] = e2
+    details[eng_keys.NORMAL_VECTOR] = e3
+    details[eng_keys.MATCH] = np.exp(log_likelihood) * 100
     
     return details
 
@@ -127,8 +127,8 @@ def fn_calculate_distance_to_line(point, line_direction, point_on_line):
     return distances
 
 def fn_check_elements_all_same(probe, relative_tolerance):
-    dimensional_tolerance = relative_tolerance * mfmc.fn_representative_scale_of_points(probe['ELEMENT_POSITION'])
+    dimensional_tolerance = relative_tolerance * utils.fn_representative_scale_of_points(probe['ELEMENT_POSITION'])
     log_likelihood = 0
-    log_likelihood += mfmc.fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MAJOR'], dimensional_tolerance)
-    log_likelihood += mfmc.fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MINOR'], dimensional_tolerance)
+    log_likelihood += utils.fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MAJOR'], dimensional_tolerance)
+    log_likelihood += utils.fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MINOR'], dimensional_tolerance)
     return log_likelihood

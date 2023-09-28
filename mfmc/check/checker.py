@@ -6,14 +6,16 @@ Created on Wed May 10 22:23:04 2023
 """
 
 import numpy as np
-import pandas as pd
+#import pandas as pd
 from ..utils import utils
 
-from ..utils import * #all functions in utils are accessible without prefix
+from ..utils import fn_get_probe_list, fn_get_sequence_list, fn_close_file
 from ..spec import default_spec, fn_get_relevant_part_of_spec, fn_parse_shape_string_in_spec, SPEC_TYPE_PREFIX, SPEC_TYPE_COUNTER
 from ..read import fn_open_file_for_reading
-from ..strs.mfmc_fieldnames import *
-from ..strs.string_table import *
+
+from ..strs import h5_keys
+from ..strs import eng_keys
+
 
 
 SEPARATOR_STR = '; '
@@ -32,17 +34,17 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     err_list = []
     
     #Check it is a sequence first
-    if 'TYPE' not in list(sequence_name.attrs) or utils.fn_str_to_utf(sequence_name.attrs[H5_TYPE]) != H5_SEQUENCE:
+    if 'TYPE' not in list(sequence_name.attrs) or utils.fn_str_to_utf(sequence_name.attrs[h5_keys.TYPE]) != h5_keys.SEQUENCE:
         err_list.append('Object is not MFMC sequence')
         return (check_log, size_table, err_list)
     
     #First check sequence group itself
-    sequence_specification = fn_get_relevant_part_of_spec(spec, H5_SEQUENCE)
+    sequence_specification = fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE)
     #return (check_log, size_table, err_list)
     (check_log, size_table, err_list, objects_referenced_by_sequence) = fn_check_mfmc_group_against_specification(MFMC, spec, sequence_name, sequence_specification, check_log, size_table, err_list)
 
     #Second, check all probe groups in sequence's probe list
-    probe_list_from_sequence = objects_referenced_by_sequence[H5_PROBE_LIST]
+    probe_list_from_sequence = objects_referenced_by_sequence[h5_keys.PROBE_LIST]
     probe_spec = fn_get_relevant_part_of_spec(spec, utils.PROBE_TYPE)
     #print(probe_list_from_sequence)
     #print(size_table)
@@ -51,12 +53,12 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
 
     #Third, check all law groups in sequence's transmit and receive laws, and 
     #log all the probes referenced by laws
-    law_list_from_sequence = list(set(objects_referenced_by_sequence[H5_TRANSMIT_LAW] + objects_referenced_by_sequence[H5_RECEIVE_LAW]))
+    law_list_from_sequence = list(set(objects_referenced_by_sequence[h5_keys.TRANSMIT_LAW] + objects_referenced_by_sequence[h5_keys.RECEIVE_LAW]))
     probes_referenced_by_laws = []
     law_spec = fn_get_relevant_part_of_spec(spec, utils.LAW_TYPE)
     for law in law_list_from_sequence:
         (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[law], law_spec, check_log, size_table, err_list)
-        probes_referenced_by_laws += objects_referenced[H5_PROBE]
+        probes_referenced_by_laws += objects_referenced[h5_keys.PROBE]
     probes_referenced_by_laws = list(set(probes_referenced_by_laws))
     
     #Check all probes referenced by laws are in sequence's probe list
@@ -68,11 +70,11 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     #return (check_log, size_table, err_list)
     #Final thing - check element indexing in laws is range
     for law in law_list_from_sequence:
-        probes = [utils.fn_str_to_utf(MFMC[i].name) for i in MFMC[law][H5_PROBE]]
+        probes = [utils.fn_str_to_utf(MFMC[i].name) for i in MFMC[law][h5_keys.PROBE]]
         #print(size_table)
         #print(probes)
         max_vals = [size_table['N_E<' + p + '>'] for p in probes]
-        vals = np.atleast_1d(MFMC[law][H5_ELEMENT])
+        vals = np.atleast_1d(MFMC[law][h5_keys.ELEMENT])
         for (p, v, m, i) in zip(probes, vals, max_vals, range(len(probes))):
             if v < 1 or v > m:
                 err_list.append('ELEMENT[' + str(i + 1) + '] in law ' + utils.fn_name_from_path(MFMC[law].name) + ': refers to elements outside range of probe ' + utils.fn_name_from_path(p))
@@ -100,7 +102,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
     dsets_in_obj = utils.fn_get_dataset_keys(mfmc_group)
     attrs_in_obj = list(mfmc_group.attrs)
     for name in list(spec.index):
-        base_string = mfmc_group.name + utils.H5_PATH_SEPARATOR + name + ': '
+        base_string = mfmc_group.name + h5_keys.PATH_SEPARATOR + name + ': '
         check_string = base_string
         
         #see if specified item is either a dataset of attribute in mfmc_group

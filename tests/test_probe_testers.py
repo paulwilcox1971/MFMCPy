@@ -8,9 +8,25 @@ Created on Thu Aug 17 17:53:16 2023
 import unittest
 import numpy as np
 
+import os
 import sys
-sys.path.append('..') #So mfmc can be found in parent directory
-import mfmc
+
+#sys.path.append('..') #So mfmc can be found in parent directory
+
+#Set working directory one level up from where this file is
+path = os.path.abspath(__file__)
+dir_path = os.path.dirname(path)
+os.chdir(os.sep.join(dir_path.split(os.sep)[0:-1]))
+
+import mfmc as m
+
+sys.exit()
+
+#import mfmc.write as m
+# from m.strs.string_table import *
+# from m.strs.mfmc_fieldnames import *
+
+
 
 no_trials = 100
 
@@ -47,7 +63,7 @@ def fn_probe_test(create_fn, test_fn, input_params, s, obj):
             tmp1 = [input_params[p]]
             tmp2 = [probe_details[p]]
         for (t1, t2) in zip(tmp1, tmp2):
-            if p == mfmc.PITCH_KEY and probe['ELEMENT_POSITION'].shape[0] == 1:
+            if p == m.eng_keys.PITCH and probe['ELEMENT_POSITION'].shape[0] == 1:
                 pass #Pitch has no meaning for single element probe so input parameter cannot be recovered
             else:
                 if isinstance(t1, float):
@@ -62,16 +78,16 @@ class cl_test_probe_testers(unittest.TestCase):
         for i in range(1, no_trials):
             rnd = np.random.default_rng(i)
             input_params = {}
-            input_params[mfmc.TYPE_KEY] = mfmc.ARRAY_TYPE_1D_LINEAR
-            input_params[mfmc.PITCH_KEY] =         rnd.random() * 5e-3 + 0.1e-3
-            input_params[mfmc.ELEMENT_WIDTH_KEY] =      (rnd.random() * 0.8 + 0.1) * input_params['Pitch (m)'];
-            input_params[mfmc.ELEMENT_LENGTH_KEY] =     rnd.random() * 20e-3 + 1e-3;
-            input_params[mfmc.NUMBER_OF_ELEMENTS_KEY] =   rnd.integers(1, 129)
-            input_params[mfmc.MID_POINT_POSITION_KEY] =    rnd.random(3) - 0.5
+            input_params[m.eng_keys.TYPE] = m.eng_keys.PROBE_TYPE_1D_LINEAR
+            input_params[m.eng_keys.PITCH] =         rnd.random() * 5e-3 + 0.1e-3
+            input_params[m.eng_keys.ELEMENT_WIDTH] =      (rnd.random() * 0.8 + 0.1) * input_params['Pitch (m)'];
+            input_params[m.eng_keys.ELEMENT_LENGTH] =     rnd.random() * 20e-3 + 1e-3;
+            input_params[m.eng_keys.NUMBER_OF_ELEMENTS] =   rnd.integers(1, 129)
+            input_params[m.eng_keys.MID_POINT_POSITION] =    rnd.random(3) - 0.5
             #create_param_keys = ('Pitch (m)', 'Element width (m)', 'Element length (m)', 'Number of elements', 'Probe mid-point (m)')
             msg_str = ' [Seed = %i]' % i
             #Test it
-            if not fn_probe_test(mfmc.fn_linear_array, mfmc.fn_test_for_1D_linear_probe, input_params, msg_str, self):
+            if not fn_probe_test(m.fn_linear_array, m.read.fn_test_for_1D_linear_probe, input_params, msg_str, self):
                 print(msg_str)
         
 
