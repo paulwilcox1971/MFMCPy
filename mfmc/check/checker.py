@@ -6,27 +6,20 @@ Created on Wed May 10 22:23:04 2023
 """
 
 import numpy as np
-#import pandas as pd
+
 from ..utils import utils
-
 from ..utils import fn_get_probe_list, fn_get_sequence_list, fn_close_file
-from ..spec import default_spec, fn_get_relevant_part_of_spec, fn_parse_shape_string_in_spec, SPEC_TYPE_PREFIX, SPEC_TYPE_COUNTER
+from ..spec import default_spec, fn_get_relevant_part_of_spec, fn_parse_shape_string_in_spec, spec_type_prefix, spec_type_counter
 from ..read import fn_open_file_for_reading
+from ..strs import h5_keys, eng_keys
 
-from ..strs import h5_keys
-from ..strs import eng_keys
+#eng_keys.SEPARATOR_STR = '; '
 
-
-
-SEPARATOR_STR = '; '
-
-
-
-NUMPY_EQUIV_DTYPE = {
-    'H5T_STRING': np.string_,
-    'H5T_FLOAT': np.floating,
-    'H5T_INTEGER': np.integer,
-    'H5T_STD_REF_OBJ': np.dtype('O')}
+# h5_keys.np_equiv_dtype = {
+#     'H5T_STRING': np.string_,
+#     'H5T_FLOAT': np.floating,
+#     'H5T_INTEGER': np.integer,
+#     'H5T_STD_REF_OBJ': np.dtype('O')}
 
 def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     check_log = []
@@ -45,7 +38,7 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
 
     #Second, check all probe groups in sequence's probe list
     probe_list_from_sequence = objects_referenced_by_sequence[h5_keys.PROBE_LIST]
-    probe_spec = fn_get_relevant_part_of_spec(spec, utils.PROBE_TYPE)
+    probe_spec = fn_get_relevant_part_of_spec(spec, h5_keys.PROBE)
     #print(probe_list_from_sequence)
     #print(size_table)
     for probe in probe_list_from_sequence:
@@ -55,7 +48,7 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     #log all the probes referenced by laws
     law_list_from_sequence = list(set(objects_referenced_by_sequence[h5_keys.TRANSMIT_LAW] + objects_referenced_by_sequence[h5_keys.RECEIVE_LAW]))
     probes_referenced_by_laws = []
-    law_spec = fn_get_relevant_part_of_spec(spec, utils.LAW_TYPE)
+    law_spec = fn_get_relevant_part_of_spec(spec, h5_keys.LAW)
     for law in law_list_from_sequence:
         (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[law], law_spec, check_log, size_table, err_list)
         probes_referenced_by_laws += objects_referenced[h5_keys.PROBE]
@@ -94,7 +87,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
     if 'TYPE' not in list(mfmc_group.attrs):
         err_list.append(mfmc_group.name + ': missing TYPE attribute')
         return (check_log, size_table, err_list, objects_referenced)
-    if utils.fn_str_to_utf(mfmc_group.attrs["TYPE"]) not in SPEC_TYPE_PREFIX.keys():    
+    if utils.fn_str_to_utf(mfmc_group.attrs["TYPE"]) not in spec_type_prefix.keys():    
         err_list.append(mfmc_group.name + ': TYPE attribute not a recognised MFMC type')
         return (check_log, size_table, err_list, objects_referenced)
     
@@ -136,7 +129,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
         
         #1. Check type of datafield
         spec_h5_dtype = spec.loc[name, 'Class']
-        spec_numpy_types = [NUMPY_EQUIV_DTYPE[x] for x in spec_h5_dtype.replace(' ', '').split('/')]
+        spec_numpy_types = [h5_keys.np_equiv_dtype[x] for x in spec_h5_dtype.replace(' ', '').split('/')]
         if hasattr(item, 'dtype'):
             item_dtype = item.dtype
         elif isinstance(item, str):
@@ -146,23 +139,23 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
         if not any([np.issubdtype(item_dtype, q) for q in spec_numpy_types]):
             err_str = 'Class should be ' + spec_h5_dtype
             err_list.append(base_string + err_str)
-            check_string += err_str + SEPARATOR_STR
+            check_string += err_str + eng_keys.SEPARATOR_STR
         else:
-            check_string += 'Class OK' + SEPARATOR_STR
+            check_string += 'Class OK' + eng_keys.SEPARATOR_STR
                 
         #2. Check dimensions of datafield
         if hasattr(item, 'shape'):
             shape_tuple = item.shape
             shape_str = spec.loc[name, 'Size or content']
-            if utils.fn_str_to_utf(mfmc_group.attrs['TYPE']) in SPEC_TYPE_COUNTER.keys():
-                shape_str = shape_str.replace(SPEC_TYPE_COUNTER[utils.fn_str_to_utf(mfmc_group.attrs['TYPE'])], '<' + mfmc_group.name + '>')
+            if utils.fn_str_to_utf(mfmc_group.attrs['TYPE']) in spec_type_counter.keys():
+                shape_str = shape_str.replace(spec_type_counter[utils.fn_str_to_utf(mfmc_group.attrs['TYPE'])], '<' + mfmc_group.name + '>')
             
             (size_table, err_str) = fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table)
             if err_str:
-                check_string += err_str + SEPARATOR_STR
+                check_string += err_str + eng_keys.SEPARATOR_STR
                 err_list.append(base_string + err_str)
             else:
-                check_string += 'Size OK' + SEPARATOR_STR
+                check_string += 'Size OK' + eng_keys.SEPARATOR_STR
 
         #3. In case for arrays of HDF5 refs - check they are refs to right thing and make a list of them
         if item_dtype == np.dtype('O'):
@@ -171,10 +164,10 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
             if any(['TYPE' not in list(MFMC[i].attrs) or utils.fn_str_to_utf(MFMC[i].attrs['TYPE']) not in spec.loc[name, 'Reference to'] for i in unique_items]):
                 err_str = 'Objects referenced should be type ' + spec.loc[name, 'Reference to']
                 err_list.append(base_string + err_str)
-                check_string += err_str + SEPARATOR_STR
+                check_string += err_str + eng_keys.SEPARATOR_STR
                 objects_referenced[name] = []
             else:
-                check_string += 'Referenced object types OK' + SEPARATOR_STR
+                check_string += 'Referenced object types OK' + eng_keys.SEPARATOR_STR
                 objects_referenced[name] = unique_items
         
         #Add the chec string to the log

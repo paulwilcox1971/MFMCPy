@@ -9,17 +9,20 @@ import os
 import numpy as np
 import h5py as h5
 
+#Only import specific functions used here
 from ..utils import fn_hdf5_group_refs_by_type  
 from ..spec import default_spec, fn_get_relevant_part_of_spec, fn_parse_shape_string_in_spec
+from ..strs import h5_keys, eng_keys
 
-from ..strs import h5_keys
-from ..strs import eng_keys
-
-NUMPY_EQUIV_DTYPE_FOR_WRITE = {
-    'H5T_STRING': np.string_,
-    'H5T_FLOAT': np.floating,
-    'H5T_INTEGER': np.integer,
-    'H5T_STD_REF_OBJ': h5.ref_dtype}
+#Following functions are exported when from write_core_functions import * is used:
+__all__ = ['fn_open_file_for_writing',
+           'fn_create_group',
+           'fn_create_file_for_writing',
+           'fn_add_probe',
+           'fn_add_law',
+           'fn_add_law',
+           'fn_add_sequence',
+           'fn_add_frame']
 
 def fn_open_file_for_writing(fname):
     """Open MFMC file if it exists, create if it does not"""
@@ -165,7 +168,7 @@ def fn_append_or_create_dataset(MFMC, group, name, data, spec):
         if name == h5_keys.MFMC_DATA or name == h5_keys.MFMC_DATA_IM:
             dtype = data.dtype #Special case for the actual data which will be stored in whatever form it comes in
         else:
-            dtype = NUMPY_EQUIV_DTYPE_FOR_WRITE[spec.loc[name, 'Class']]
+            dtype = h5_keys.np_equiv_dtype[spec.loc[name, 'Class']]
         chunks = list(data.shape)
         chunks[0] = 1
         maxshape = list(data.shape)
@@ -182,7 +185,7 @@ def fn_write_structure(MFMC, group, var, spec, skip_fields = []):
         if i in var.keys():
             #Write to file according to spec
             if spec.loc[i, 'D or A'] == 'D':
-                MFMC[group].create_dataset(i, data = var[i], dtype = NUMPY_EQUIV_DTYPE_FOR_WRITE[spec.loc[i, 'Class']])
+                MFMC[group].create_dataset(i, data = var[i], dtype = h5_keys.np_equiv_dtype[spec.loc[i, 'Class']])
             else:
                 #Attribute
                 MFMC[group].attrs[i] = var[i]
