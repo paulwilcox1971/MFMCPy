@@ -18,7 +18,7 @@ from ..strs import eng_keys
 # import mfmc
 
 
-def fn_linear_array(input_params):
+def fn_1D_linear_probe(input_params):
     default_params = {eng_keys.MID_POINT_POSITION:  (0.0, 0.0, 0.0), 
                       eng_keys.NORMAL_VECTOR:       (0.0, 0.0, 1.0),
                       eng_keys.ACTIVE_VECTOR:       (1.0, 0.0, 0.0),
@@ -31,9 +31,14 @@ def fn_linear_array(input_params):
     passive_direction = np.cross(input_params[eng_keys.NORMAL_VECTOR], input_params[eng_keys.ACTIVE_VECTOR])
     e1 = np.tile(passive_direction, (input_params[eng_keys.NUMBER_OF_ELEMENTS], 1)) * input_params[eng_keys.ELEMENT_LENGTH] / 2
     e2 = np.tile(input_params[eng_keys.ACTIVE_VECTOR], (input_params[eng_keys.NUMBER_OF_ELEMENTS], 1))* input_params[eng_keys.ELEMENT_WIDTH] / 2
-    return {'TYPE': 'PROBE', 'ELEMENT_POSITION': p, 'ELEMENT_MAJOR': e1, 'ELEMENT_MINOR': e2, 'CENTRE_FREQUENCY': input_params[eng_keys.CENTRE_FREQUENCY], 'ELEMENT_SHAPE': np.ones(input_params[eng_keys.NUMBER_OF_ELEMENTS])}
+    return {h5_keys.TYPE: h5_keys.PROBE, 
+            h5_keys.ELEMENT_POSITION: p, 
+            h5_keys.ELEMENT_MAJOR: e1, 
+            h5_keys.ELEMENT_MINOR: e2, 
+            h5_keys.CENTRE_FREQUENCY: input_params[eng_keys.CENTRE_FREQUENCY], 
+            h5_keys.ELEMENT_SHAPE: np.ones(input_params[eng_keys.NUMBER_OF_ELEMENTS])}
 
-def fn_matrix_array(input_params):
+def fn_2D_matrix_probe(input_params):
     default_params = {eng_keys.MID_POINT_POSITION:  (0.0, 0.0, 0.0), 
                       eng_keys.NORMAL_VECTOR:       (0.0, 0.0, 1.0),
                       eng_keys.FIRST_VECTOR:       (1.0, 0.0, 0.0),
@@ -52,7 +57,12 @@ def fn_matrix_array(input_params):
         t2.reshape(nt, 1) * np.array(input_params[eng_keys.SECOND_VECTOR]).reshape(1, 3)
     e1 = np.tile(input_params[eng_keys.FIRST_VECTOR], (nt, 1)) * s[0] / 2
     e2 = np.tile(input_params[eng_keys.SECOND_VECTOR], (nt, 1))* s[1] / 2
-    return {'TYPE': 'PROBE', 'ELEMENT_POSITION': p, 'ELEMENT_MAJOR': e1, 'ELEMENT_MINOR': e2, 'CENTRE_FREQUENCY': input_params[eng_keys.CENTRE_FREQUENCY], 'ELEMENT_SHAPE': np.ones(input_params[eng_keys.NUMBER_OF_ELEMENTS])}
+    return {h5_keys.TYPE: h5_keys.PROBE, 
+            h5_keys.ELEMENT_POSITION: p, 
+            h5_keys.ELEMENT_MAJOR: e1, 
+            h5_keys.ELEMENT_MINOR: e2, 
+            h5_keys.CENTRE_FREQUENCY: input_params[eng_keys.CENTRE_FREQUENCY], 
+            h5_keys.ELEMENT_SHAPE: np.ones(input_params[eng_keys.NUMBER_OF_ELEMENTS])}
 
 def fn_expand_if_nesc(x):
     if np.isscalar(x):

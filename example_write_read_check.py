@@ -31,7 +31,7 @@ input_params1[m.eng_keys.PITCH] = 1e-3
 input_params1[m.eng_keys.ELEMENT_WIDTH] = 0.9e-3
 input_params1[m.eng_keys.ELEMENT_LENGTH] = 10e-3
 input_params1[m.eng_keys.NUMBER_OF_ELEMENTS] = no_elements
-probe1 = m.fn_linear_array(input_params1)
+probe1 = m.fn_1D_linear_probe(input_params1)
 
 #Open file for writing and load spec
 #MFMC = m.fn_open_file_for_writing(fname)
