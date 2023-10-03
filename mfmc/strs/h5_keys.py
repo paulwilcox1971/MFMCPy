@@ -7,9 +7,6 @@ Created on Fri Sep 22 16:20:01 2023
 
 #Definitions of fieldnames in MFMC
 
-import numpy as np
-import h5py as h5
-
 PATH_SEPARATOR = "/"
 
 TYPE = "TYPE"
@@ -58,12 +55,6 @@ LAW = "LAW"
 ELEMENT = "ELEMENT"
 DELAY = "DELAY"
 WEIGHTING = "WEIGHTING"
-
-np_equiv_dtype = {
-    'H5T_STRING': np.string_,
-    'H5T_FLOAT': np.floating,
-    'H5T_INTEGER': np.integer,
-    'H5T_STD_REF_OBJ': h5.ref_dtype}#np.dtype('O')}
 
 DEFAULT_PREFIX = {
     PROBE: "P",

@@ -7,28 +7,17 @@ Created on Fri Sep 22 17:55:49 2023
 
 import pandas as pd
 import numpy as np
+from .. import utils
 
-#Only import specific functions used here
-from ..utils.defaults import default_spec_fname
-from ..strs import h5_keys, eng_keys
+SPEC_TYPE_PREFIX = {
+    utils.SEQUENCE_TYPE: '{sequence}' + utils.H5_PATH_SEPARATOR, 
+    utils.PROBE_TYPE: '{probe}' + utils.H5_PATH_SEPARATOR, 
+    utils.LAW_TYPE: '{law}' + utils.H5_PATH_SEPARATOR}
 
-#Following functions are exported when from spec_functions import * is used:
-__all__ = ['fn_load_specification',
-           'fn_get_relevant_part_of_spec',
-           'fn_parse_shape_string_in_spec',
-           'default_spec',
-           'spec_type_prefix',
-           'spec_type_counter']
-
-spec_type_prefix = {
-    h5_keys.SEQUENCE: '{sequence}' + h5_keys.PATH_SEPARATOR, 
-    h5_keys.PROBE: '{probe}' + h5_keys.PATH_SEPARATOR, 
-    h5_keys.LAW: '{law}' + h5_keys.PATH_SEPARATOR}
-
-spec_type_counter = {
-    h5_keys.SEQUENCE: '<m>', 
-    h5_keys.PROBE: '<p>', 
-    h5_keys.LAW: '<k>'}
+SPEC_TYPE_COUNTER = {
+    utils.SEQUENCE_TYPE: '<m>', 
+    utils.PROBE_TYPE: '<p>', 
+    utils.LAW_TYPE: '<k>'}
 
 def fn_load_specification(spec_fname):
     spec = pd.read_excel(spec_fname, index_col = 'Name')
@@ -36,7 +25,7 @@ def fn_load_specification(spec_fname):
     return spec
 
 def fn_get_relevant_part_of_spec(spec, MFMC_type):
-    prefix = spec_type_prefix[MFMC_type]
+    prefix = SPEC_TYPE_PREFIX[MFMC_type]
     subspec = spec.loc[spec.index[:].str.startswith(prefix),:]
     subspec.index = subspec.index.str.replace(prefix, '', regex = False)
     return subspec
@@ -52,4 +41,6 @@ def fn_parse_shape_string_in_spec(shape_str):
     shape_str = tuple(reversed(shape_str)) 
     return shape_str
 
-default_spec = fn_load_specification(default_spec_fname)
+default_spec = fn_load_specification(utils.default_spec_fname)
+
+expandable_dims = ['N_M', 'N_F<m>', 'N_B<m>']

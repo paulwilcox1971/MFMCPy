@@ -11,18 +11,17 @@ Created on Fri Jul 14 17:31:59 2023
 import numpy as np
 import sys
 
-from ..utils.defaults import default_tolerance
-from ..utils.math_functions import fn_representative_scale_of_points, fn_normal_log_likelihood_rows_are_same, fn_estimate_params_of_point_cloud
+from .. import utils
 from ..strs import eng_keys
 
 
-def fn_test_for_1D_linear_probe(probe, relative_tolerance = default_tolerance):
-    details = {eng_keys.TYPE: eng_keys.PROBE_TYPE_1D_LINEAR, eng_keys.MATCH: 0}
+def fn_test_for_1D_linear_probe(probe, relative_tolerance = utils.default_tolerance):
+    details = {eng_keys.TYPE: eng_keys.ARRAY_TYPE_1D_LINEAR, eng_keys.MATCH: 0}
     log_likelihood = 0
     
     #Analyse element positions
     (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_per_dim) = \
-        fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
+        eng_keys.fn_estimate_params_of_point_cloud(probe['ELEMENT_POSITION'], relative_tolerance)
 
     #For 1D probe, active direction (e1) is same as element major axis,
     #e2 is given by element minor axis and e3 (normal) - but is this right? What
@@ -53,8 +52,8 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = default_tolerance):
     
     return details
 
-def fn_test_for_2d_matrix_probe(probe, relative_tolerance = default_tolerance):
-    details = {eng_keys.TYPE: eng_keys.PROBE_TYPE_2D_MATRIX, eng_keys.MATCH: 0}
+def fn_test_for_2d_matrix_probe(probe, relative_tolerance = utils.default_tolerance):
+    details = {eng_keys.TYPE: eng_keys.ARRAY_TYPE_2D_MATRIX, eng_keys.MATCH: 0}
     log_likelihood = 0
     
     #Analyse element positions
@@ -128,8 +127,8 @@ def fn_calculate_distance_to_line(point, line_direction, point_on_line):
     return distances
 
 def fn_check_elements_all_same(probe, relative_tolerance):
-    dimensional_tolerance = relative_tolerance * fn_representative_scale_of_points(probe['ELEMENT_POSITION'])
+    dimensional_tolerance = relative_tolerance * utils.fn_representative_scale_of_points(probe['ELEMENT_POSITION'])
     log_likelihood = 0
-    log_likelihood += fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MAJOR'], dimensional_tolerance)
-    log_likelihood += fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MINOR'], dimensional_tolerance)
+    log_likelihood += utils.fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MAJOR'], dimensional_tolerance)
+    log_likelihood += utils.fn_normal_log_likelihood_rows_are_same(probe['ELEMENT_MINOR'], dimensional_tolerance)
     return log_likelihood

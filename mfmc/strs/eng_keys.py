@@ -10,8 +10,6 @@ Following are keys used in dictionaries describing array parameters
 These are not part of the MFMC specification and can be altered to suit language etc
 """
 
-SEPARATOR_STR = '; '
-
 #Probe parameters used as dictionary keys
 TYPE = 'Type'
 MATCH = 'Match (%)'
