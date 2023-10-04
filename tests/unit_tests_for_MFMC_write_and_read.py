@@ -9,6 +9,7 @@ import numpy as np
 
 import os
 import sys
+import copy
 
 #Set working directory one level up from where this file is
 path = os.path.abspath(__file__)
@@ -18,24 +19,31 @@ os.chdir(os.sep.join(dir_path.split(os.sep)[0:-1]))
 
 import mfmc as m
 
-fname = 'test.mfmc'
+fname = 'test2.mfmc'
 
 #------------------------------------------------------------------------------
-def fn_write(probes):
-    # try:
-        #Probe
-    
+def fn_write(obj):
         #Open file for writing and load spec
         MFMC = m.write.fn_create_file_for_writing(fname, False)
 
-        #Write a couple of probes to the file
-        m.write.fn_create_group(MFMC, 'PROBES')
+        #Write probes to file
+        m.write.fn_create_group(MFMC, obj.probe_group)
         probe_objs = []
-        for p in probes:
-            probe_objs.append(m.write.fn_add_probe(MFMC['PROBES'], p))
+        for (p, n) in zip(obj.probes, obj.probe_names):
+            probe_objs.append(m.write.fn_add_probe(MFMC[obj.probe_group], p, n))
         
-        laws = []
-        sequences = []
+        #Write laws to file
+        m.write.fn_create_group(MFMC, obj.law_group)
+        law_objs = []
+        for (l, n) in zip(obj.laws, obj.law_names):
+            law = copy.copy(l) #copy needed to so that the reference can be converted to H5 ref for writing to file
+            law[m.write.h5_keys.PROBE] = [MFMC[law[m.write.h5_keys.PROBE][0]].ref]
+            law_objs.append(m.write.fn_add_law(MFMC[obj.law_group], law, n))
+        
+        #Write sequence header to file
+        
+        # laws = []
+        # sequences = []
         #add some laws (FMC-like)
         # law_refs = []
         # law = {m.write.h5_keys.TYPE: m.write.h5_keys.LAW}
@@ -68,8 +76,6 @@ def fn_write(probes):
     
         m.write.fn_close_file(MFMC)
         return True
-    # except:
-    #     return (False, [], [], [])
 
 def fn_check():
     MFMC = m.read.fn_open_file_for_reading(fname)
@@ -103,39 +109,39 @@ def fn_read(obj):
     MFMC = m.read.fn_open_file_for_reading(fname)
 
     #Read in probes
-    probe_list = m.read.fn_get_probe_list(MFMC)
     probes = []
-    for p in probe_list:
-        probes.append(m.read.fn_read_probe(MFMC, p))
+    for p in obj.probe_names:
+        probes.append(m.read.fn_read_probe(MFMC, obj.probe_group + m.strs.h5_keys.PATH_SEPARATOR + p))
 
-    # #Read in laws - note order is random if you just read them in!
-    # law_list = m.read.fn_get_law_list(MFMC)
-    # laws = []
-    # for i in law_list:
-    #     laws.append(m.read.fn_read_law(MFMC, i))
+    #Compare read probes with what they should be!
+    [success, err_msg]= m.utils.fn_compare_dicts(obj.probes, probes)
+    obj.assertTrue(success, err_msg)
 
-    # seq_list = m.read.fn_get_sequence_list(MFMC)
-    # seq_data = m.read.fn_read_sequence_data(MFMC, seq_list[0])
-
-    # #read last frame in seq
-    # frames = m.read.fn_read_frame(MFMC, seq_list[0])
+    #Compare laws with what they should be
+    laws = []
+    for l in obj.law_names:
+        law = m.read.fn_read_law(MFMC, obj.law_group + m.strs.h5_keys.PATH_SEPARATOR + l)
+        law[m.write.h5_keys.PROBE] = []
+        for ll in law[m.write.h5_keys.PROBE]:
+            law[m.write.h5_keys.PROBE].append(MFMC[ll].name)
+        laws.append(law)
+        
+    [success, err_msg]= m.utils.fn_compare_dicts(obj.laws, laws)
+    obj.assertTrue(success, err_msg)
 
     # #Close file
     m.read.fn_close_file(MFMC)
     
-    #need to compare them item by item!
-    for [p1,p2] in zip(obj.probes, probes):
-        for k in p1.keys():
-            if type(p1[k]) is str:
-                obj.assertEqual(p1[k], p2[k], msg = 'Incorrect' + k)
-            else:
-                v1 = np.array(p1[k]).ravel()
-                v2 = np.array(p2[k]).ravel()
-                dp = np.dot(v1, v2) / np.sqrt(np.dot(v1, v1) * np.dot(v2, v2))
-                obj.assertAlmostEqual(dp, 1.0, places = 8, msg = 'Incorrect ' + k)
+                                               
     return success
 
-def fn_setup():
+def fn_setup(obj):
+    #
+    obj.probe_prefix = 'TEST PROBE'
+    obj.probe_group = '/TEST PROBE GROUP'
+    obj.law_prefix = 'TEST LAW'
+    obj.law_group = '/TEST LAW GROUP'
+    #define all the correct parameters here 
     no_elements = 4
     input_params1 = {}
     input_params1[m.write.eng_keys.PITCH] = 1e-3
@@ -143,14 +149,31 @@ def fn_setup():
     input_params1[m.write.eng_keys.ELEMENT_LENGTH] = 10e-3
     input_params1[m.write.eng_keys.NUMBER_OF_ELEMENTS] = no_elements
     
-    probes = [];
-    probes.append(m.write.fn_1D_linear_probe(input_params1))
-    return probes
+    obj.probes = [];
+    obj.probe_names = []
+    for i in [1,2]:
+        obj.probes.append(m.write.fn_1D_linear_probe(input_params1))
+        obj.probe_names.append(obj.probe_prefix + str(i))
+#    print(obj.probe_names[-1])
+
+    obj.laws = []
+    obj.law_names = []
+    for i in range(no_elements):
+        law = {m.write.h5_keys.TYPE: m.write.h5_keys.LAW}
+        law[m.write.h5_keys.PROBE] = [obj.probe_group + m.strs.h5_keys.PATH_SEPARATOR + obj.probe_names[0]]
+        law[m.write.h5_keys.ELEMENT] = [i + 1]
+        obj.laws.append(law)
+        obj.law_names.append(obj.law_prefix + str(i + 1))
+    #print(obj.laws[-1])
+    #print(obj.law_names[-1])
+
+
+    return
 
 class cl_test_probe_testers(unittest.TestCase):
     def setUp(self):
-        self.probes = fn_setup()
-        fn_write(self.probes)
+        fn_setup(self)
+        fn_write(self)
     # def test_write(self):
     #     self.assertTrue()
     #     print('Write test')

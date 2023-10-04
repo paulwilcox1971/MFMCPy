@@ -50,18 +50,8 @@ def fn_probe_test(create_fn, test_fn, input_params, s, obj):
         return False
             
     #Compare the recovered parameters to the input ones
-    for p in input_params.keys():
-        if p not in probe_details.keys():
-            continue
-        if type(input_params[p]) is str:
-            obj.assertEqual(input_params[p], probe_details[p], msg = 'Incorrect' + p + s)
-        else:
-            p1 = np.array(input_params[p])
-            p2 = np.array(probe_details[p])
-            dp = np.dot(p1, p2) / np.sqrt(np.dot(p1, p1) * np.dot(p2, p2))
-            if p.endswith(m.strs.eng_keys.DIRECTION_ONLY_SUFFIX):
-                dp = np.abs(dp) #special case where parameter is unit vector and sign doesn't matter as long as direciton correct
-            obj.assertAlmostEqual(dp, 1.0, places = 8, msg = 'Incorrect ' + p + s)
+    [success, err_msg] = m.utils.fn_compare_dicts(probe_details, input_params, ignore_direction_for_keys_with_this_suffix = m.strs.eng_keys.DIRECTION_ONLY_SUFFIX)
+    obj.assertTrue(success, err_msg)
     return True
 
 class cl_test_probe_testers(unittest.TestCase):
