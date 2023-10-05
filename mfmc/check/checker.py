@@ -40,12 +40,18 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     
     #First check sequence group itself
     sequence_specification = fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE)
+    #In special case of sequence without frames, remove relevant parts of spec
+    #to avoid errors being raise
+    if h5_keys.MFMC_DATA not in sequence_name.keys():
+        #err_list.append(sequence_name.name + ' contains no frames')
+        sequence_specification = sequence_specification.drop(sequence_specification.index[[s in h5_keys.FRAME_KEYS for s in sequence_specification.index]])
+    
     #return (check_log, size_table, err_list)
     (check_log, size_table, err_list, objects_referenced_by_sequence) = fn_check_mfmc_group_against_specification(MFMC, spec, sequence_name, sequence_specification, check_log, size_table, err_list)
 
     #Second, check all probe groups in sequence's probe list
     probe_list_from_sequence = objects_referenced_by_sequence[h5_keys.PROBE_LIST]
-    probe_spec = fn_get_relevant_part_of_spec(spec, utils.PROBE_TYPE)
+    probe_spec = fn_get_relevant_part_of_spec(spec, h5_keys.PROBE)
     #print(probe_list_from_sequence)
     #print(size_table)
     for probe in probe_list_from_sequence:
@@ -55,7 +61,7 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     #log all the probes referenced by laws
     law_list_from_sequence = list(set(objects_referenced_by_sequence[h5_keys.TRANSMIT_LAW] + objects_referenced_by_sequence[h5_keys.RECEIVE_LAW]))
     probes_referenced_by_laws = []
-    law_spec = fn_get_relevant_part_of_spec(spec, utils.LAW_TYPE)
+    law_spec = fn_get_relevant_part_of_spec(spec, h5_keys.LAW)
     for law in law_list_from_sequence:
         (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[law], law_spec, check_log, size_table, err_list)
         probes_referenced_by_laws += objects_referenced[h5_keys.PROBE]

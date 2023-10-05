@@ -6,11 +6,15 @@ Created on Mon Sep 25 16:47:21 2023
 """
 import os
 import h5py as h5
+import numpy as np
 
-from ..utils import *
+
+from ..utils import fn_str_to_utf, fn_get_probe_list, fn_get_law_list, fn_get_sequence_list, fn_close_file
 from ..spec import default_spec, fn_get_relevant_part_of_spec
+
 from ..strs import h5_keys
 from ..strs import eng_keys
+
 
 def fn_open_file_for_reading(fname, root_path = '/'):
     if os.path.isfile(fname):
@@ -41,7 +45,9 @@ def fn_read_law(MFMC, group, spec = default_spec):
         return law
     
 def fn_read_sequence_data(MFMC, group, spec = default_spec):
-    seq = fn_read_structure(MFMC, group, fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE), skip_fields = [h5_keys.MFMC_DATA, h5_keys.MFMC_DATA_IM])
+    seq = fn_read_structure(MFMC, group, 
+                            fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE), 
+                            skip_fields = h5_keys.FRAME_KEYS)
     if not seq:
         return []
     if h5_keys.TYPE not in seq.keys() or seq[h5_keys.TYPE] != h5_keys.SEQUENCE:
@@ -78,6 +84,14 @@ def fn_read_structure(MFMC, group, spec, skip_fields = []):
                 var[i] = MFMC[group].attrs[i]
                 if spec.loc[i, 'Class'] == 'H5T_STRING':
                     var[i] = fn_str_to_utf(var[i])
+        #Convert HDF5 object refs to HDF5 object names for use in Python 
+        #dictionaries
+        if spec.loc[i, 'Class'] == 'H5T_STD_REF_OBJ':
+            if type(var[i]) is np.ndarray:
+                var[i][:] = [MFMC[j].name for j in var[i]]
+            else:
+                var[i] = MFMC[var[i]].name
+
         if spec.loc[i, 'M or O'] == 'M' and i not in var.keys():
             #Occurs if neither attribute or dataset found
             print('Error: mandatory field', i, 'missing')

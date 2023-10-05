@@ -8,16 +8,19 @@ Created on Fri Sep 22 17:55:49 2023
 import pandas as pd
 import numpy as np
 from .. import utils
+from ..strs import h5_keys
+from ..strs import eng_keys
+
 
 SPEC_TYPE_PREFIX = {
-    utils.SEQUENCE_TYPE: '{sequence}' + utils.H5_PATH_SEPARATOR, 
-    utils.PROBE_TYPE: '{probe}' + utils.H5_PATH_SEPARATOR, 
-    utils.LAW_TYPE: '{law}' + utils.H5_PATH_SEPARATOR}
+    h5_keys.SEQUENCE: '{sequence}' + h5_keys.PATH_SEPARATOR, 
+    h5_keys.PROBE: '{probe}' + h5_keys.PATH_SEPARATOR, 
+    h5_keys.LAW: '{law}' + h5_keys.PATH_SEPARATOR}
 
 SPEC_TYPE_COUNTER = {
-    utils.SEQUENCE_TYPE: '<m>', 
-    utils.PROBE_TYPE: '<p>', 
-    utils.LAW_TYPE: '<k>'}
+    h5_keys.SEQUENCE: '<m>', 
+    h5_keys.PROBE: '<p>', 
+    h5_keys.LAW: '<k>'}
 
 def fn_load_specification(spec_fname):
     spec = pd.read_excel(spec_fname, index_col = 'Name')

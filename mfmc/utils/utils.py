@@ -7,25 +7,16 @@ Created on Wed May 10 23:25:04 2023
 import h5py as h5
 import pandas as pd
 import numpy as np
-#MFMC names
 
-SEQUENCE_TYPE = 'SEQUENCE'
-PROBE_TYPE = 'PROBE'
-LAW_TYPE = 'LAW'
-H5_PATH_SEPARATOR = '/'
-
-#Various MFMC utility functions
-
-# def fn_open_file_for_reading(fname, root_path = '/'):
-#     MFMC = h5.File(fname, 'r')
-#     return MFMC
+from ..strs import h5_keys
+from ..strs import eng_keys
 
 def fn_close_file(MFMC):
     MFMC.close()
     return
 
 def fn_get_sequence_list(MFMC):
-    sequence_list = fn_hdf5_group_refs_by_type(MFMC, SEQUENCE_TYPE)
+    sequence_list = fn_hdf5_group_refs_by_type(MFMC, h5_keys.SEQUENCE)
     return sequence_list
 
 def fn_transmit_laws_for_sequence(MFMC, sequence):
@@ -37,10 +28,6 @@ def fn_receive_laws_for_sequence(MFMC, sequence):
 def fn_compare_dicts(d1, d2, places = 8, ignore_direction_for_keys_with_this_suffix = None):
     """compares entries with common keys in both dictionaries. Dictionaries must
     contain only numpy arrays or strings. d1 and d2 can also be lists of dicts"""
-    # if type(d1) != list:
-    #     d1 = [d1];
-    # if type(d2) != list:
-    #     d2 = [d2];
     d1 = fn_force_to_list(d1)
     d2 = fn_force_to_list(d2)
     err_msg = []
@@ -88,20 +75,20 @@ def fn_get_dataset_keys(group):
     return keys
 
 def fn_get_probe_list(MFMC):
-    probe_list = fn_hdf5_group_refs_by_type(MFMC, PROBE_TYPE)
+    probe_list = fn_hdf5_group_refs_by_type(MFMC, h5_keys.PROBE)
     return probe_list
       
 def fn_get_law_list(MFMC):
-    law_list = fn_hdf5_group_refs_by_type(MFMC, LAW_TYPE)
+    law_list = fn_hdf5_group_refs_by_type(MFMC, h5_keys.LAW)
     return law_list
        
-def fn_hdf5_group_refs_by_type(MFMC, TYPE):
+def fn_hdf5_group_refs_by_type(MFMC, type):
     names = []
     def fn_dummy(name):
-        if 'TYPE' in MFMC[name].attrs:
-            if TYPE == fn_str_to_utf(MFMC[name].attrs['TYPE']):
+        if h5_keys.TYPE in MFMC[name].attrs:
+            if type == fn_str_to_utf(MFMC[name].attrs[h5_keys.TYPE]):
                 #names.append(cl_loc_details(ref = MFMC[name].ref, name = fn_name_from_path(name), location = MFMC[name].parent.name))
-                names.append(name)
+                names.append(h5_keys.PATH_SEPARATOR + name)
         return None
     MFMC.visit(fn_dummy)
     return names

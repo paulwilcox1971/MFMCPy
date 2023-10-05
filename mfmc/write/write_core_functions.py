@@ -32,7 +32,8 @@ def fn_create_group(MFMC, group):
         grp = MFMC[group]
     else:
         grp = MFMC.create_group(group)
-    return grp
+    print(grp.name)
+    return grp.name
 
 def fn_create_file_for_writing(fname, warn_if_file_exists = True):
     """Open new MFMC file for writing. If it already exists, overwrite"""
@@ -49,6 +50,7 @@ def fn_add_probe(MFMC, probe, name = None, warn_if_probe_exists = True, spec = d
     MFMC can be just the HDF5 file object or a group within it
     If no name specified, next free default name will be used.
     If name specified exists already, it will be overwritten"""
+    probe[h5_keys.TYPE] = h5_keys.PROBE
     if name == None:
         name = fn_next_free_name(MFMC, h5_keys.PROBE)
     if name in MFMC.keys():
@@ -57,7 +59,7 @@ def fn_add_probe(MFMC, probe, name = None, warn_if_probe_exists = True, spec = d
         del MFMC[name]
     grp = MFMC.create_group(name)
     if fn_write_structure(MFMC, name, probe, fn_get_relevant_part_of_spec(spec, h5_keys.PROBE)):
-        return grp
+        return grp.name
     else:
         return []
 
@@ -67,6 +69,7 @@ def fn_add_law(MFMC, law, name = None, warn_if_law_exists = True, spec = default
     MFMC can be just the HDF5 file object or a group within it
     If no name specified, next free default name will be used.
     If name specified exists already, it will be overwritten"""
+    law[h5_keys.TYPE] = h5_keys.LAW
     if name == None:
         name = fn_next_free_name(MFMC, h5_keys.LAW)
     if name in MFMC.keys():
@@ -75,7 +78,7 @@ def fn_add_law(MFMC, law, name = None, warn_if_law_exists = True, spec = default
         del MFMC[name]
     grp = MFMC.create_group(name)
     if fn_write_structure(MFMC, name, law, fn_get_relevant_part_of_spec(spec, h5_keys.LAW)):
-        return grp
+        return grp.name
     else:
         return []
     
@@ -85,6 +88,7 @@ def fn_add_sequence(MFMC, seq, name = None, warn_if_seq_exists = True, spec = de
     probes referenced in sequence probe_list of sequence musy be already in file
     laws referenced by sequence tx/rx laws must be already in file
     """
+    seq[h5_keys.TYPE] = h5_keys.SEQUENCE
     if name == None:
         name = fn_next_free_name(MFMC, h5_keys.SEQUENCE)
     if name in MFMC.keys():
@@ -92,13 +96,25 @@ def fn_add_sequence(MFMC, seq, name = None, warn_if_seq_exists = True, spec = de
             return []
         del MFMC[name]
     grp = MFMC.create_group(name)
-    if fn_write_structure(
+    if not fn_write_structure(
             MFMC, name, seq, 
             fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE), 
-            skip_fields = [h5_keys.MFMC_DATA, h5_keys.MFMC_DATA_IM, h5_keys.PROBE_PLACEMENT_INDEX, h5_keys.PROBE_POSITION, h5_keys.PROBE_X_DIRECTION, h5_keys.PROBE_Y_DIRECTION]):
-        return grp
-    else:
+            skip_fields = h5_keys.FRAME_KEYS):
         return []
+    #If no frames of data included in seq return here, otherwise add the frames
+    if h5_keys.MFMC_DATA not in seq.keys():
+        return grp.name
+        #seq[h5_keys.MFMC_DATA] = np.zeros((0, len(seq[h5_keys.TRANSMIT_LAW]), len(seq[h5_keys.TIME])))
+    #Add frame
+    frame = {}
+    for k in h5_keys.FRAME_KEYS:
+        if k in seq.keys():
+            frame[k] = seq[k]
+            
+    if not fn_add_frame(MFMC, name, frame):
+        return []
+
+    return grp.name
     
 def fn_add_frame(MFMC, seq_name, frame, spec = default_spec):
     """Adds frame(s) to existing sequence.
@@ -180,12 +196,22 @@ def fn_write_structure(MFMC, group, var, spec, skip_fields = []):
         if i in skip_fields:
             continue
         if i in var.keys():
+            #Convert Python dictionary keys to HDF5 object references - need to 
+            #create new variable otherwise entries in original list in calling
+            #script will be overwitten as well
+            if spec.loc[i, 'Class'] == 'H5T_STD_REF_OBJ':
+                if type(var[i]) is list or type(var[i]) is np.ndarray:
+                    var_to_write = [MFMC[j].ref for j in var[i]]
+                else:
+                    var_to_write = MFMC[var[i]].ref
+            else:
+                var_to_write = var[i]
             #Write to file according to spec
             if spec.loc[i, 'D or A'] == 'D':
-                MFMC[group].create_dataset(i, data = var[i], dtype = NUMPY_EQUIV_DTYPE_FOR_WRITE[spec.loc[i, 'Class']])
+                MFMC[group].create_dataset(i, data = var_to_write, dtype = NUMPY_EQUIV_DTYPE_FOR_WRITE[spec.loc[i, 'Class']])
             else:
                 #Attribute
-                MFMC[group].attrs[i] = var[i]
+                MFMC[group].attrs[i] = var_to_write
         else:
             if spec.loc[i, 'M or O'] == 'M':
                 print('Warning: mandatory field', i, 'missing')
