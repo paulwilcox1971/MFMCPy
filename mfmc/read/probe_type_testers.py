@@ -24,6 +24,10 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = utils.default_tolera
     (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_per_dim) = \
         utils.fn_estimate_params_of_point_cloud(probe[h5_keys.ELEMENT_POSITION], relative_tolerance)
 
+    log_likelihood += loglikelihood_dim[0]
+    log_likelihood += loglikelihood_pitch[0]
+    
+    log_likelihood += fn_check_elements_all_same(probe, relative_tolerance)
     #For 1D probe, active direction (e1) is same as element major axis,
     #e2 is given by element minor axis and e3 (normal) - but is this right? What
     #if major and minor are defined the other way around? See spec - these should define probe normal unambigiously
@@ -79,8 +83,13 @@ def fn_test_for_2D_matrix_probe(probe, relative_tolerance = utils.default_tolera
     
     #For 2D probe, first and second vectors should be from principle components. Normal vector from maj x min
     e1 = v[0]
-    e2 = v[1]
+    if len(v) > 1:
+        e2 = v[1]
+    else:
+        e2 = np.mean(probe[h5_keys.ELEMENT_MAJOR], axis = 0)
+        e2 /= np.linalg.norm(e2)
     e3 = np.cross(e1, e2)
+    
 
     #Add the details - note numbers are not rounded at this point
     details[eng_keys.PITCH] = pitch

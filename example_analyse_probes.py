@@ -14,6 +14,8 @@ fnames = glob.glob(os.sep.join(['Example MFMC files', '*.mfmc']))
 
 suppress_law_details = True
 
+probe_test_functions = [m.read.fn_test_for_1D_linear_probe, m.read.fn_test_for_2D_matrix_probe]
+
 for fname in fnames:
     print('FILE: '+fname)
     print()
@@ -22,9 +24,10 @@ for fname in fnames:
     for p in probe_list:
         print('  PROBE: ' + p)
         probe = m.read.fn_read_probe(MFMC, p)
-        details = m.read.fn_test_for_1D_linear_probe(probe)
-        m.read.fn_pretty_print_dictionary(details)
-        print()
+        for t in probe_test_functions:
+            details = t(probe)
+            m.read.fn_pretty_print_dictionary(details)
+            print()
     m.check.fn_close_file(MFMC)
     print()
     print()
