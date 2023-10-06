@@ -78,7 +78,8 @@ def fn_normal_log_likelihood(vals, mu, sigma):
     return normal_log_likelihood
 
 def fn_normal_log_likelihood_rows_are_same(vals, sigma):
-    return fn_normal_log_likelihood(vals, np.mean(vals, axis = 0, keepdims = True), sigma) #np.sum(np.log(np.exp((np.sum((vals - np.mean(vals, axis = 0, keepdims = True)) ** 2, axis = 1)) / sigma ** 2)))
+    mn = np.mean(vals, axis = 0, keepdims = True)
+    return (fn_normal_log_likelihood(vals, mn, sigma), mn) #np.sum(np.log(np.exp((np.sum((vals - np.mean(vals, axis = 0, keepdims = True)) ** 2, axis = 1)) / sigma ** 2)))
 
 def fn_pca(p, num_components):
     if p.shape[0] < 2:

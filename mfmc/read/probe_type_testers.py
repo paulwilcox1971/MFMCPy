@@ -27,7 +27,8 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = utils.default_tolera
     log_likelihood += loglikelihood_dim[0]
     log_likelihood += loglikelihood_pitch[0]
     
-    log_likelihood += fn_check_elements_all_same(probe, relative_tolerance)
+    lik, emj, emn = fn_check_elements_all_same(probe, relative_tolerance)
+    log_likelihood += lik
     #For 1D probe, active direction (e1) is same as element major axis,
     #e2 is given by element minor axis and e3 (normal) - but is this right? What
     #if major and minor are defined the other way around? See spec - these should define probe normal unambigiously
@@ -41,18 +42,16 @@ def fn_test_for_1D_linear_probe(probe, relative_tolerance = utils.default_tolera
     #Add the details - note numbers are not rounded at this point
     details[eng_keys.NUMBER_OF_ELEMENTS] = probe['ELEMENT_POSITION'].shape[0]
     details[eng_keys.PITCH] = pitch[0]
-    details[eng_keys.ELEMENT_LENGTH] = np.mean(np.linalg.norm(probe[h5_keys.ELEMENT_MAJOR], axis = 1)) * 2
-    details[eng_keys.ELEMENT_WIDTH] = np.mean(np.linalg.norm(probe[h5_keys.ELEMENT_MINOR], axis = 1)) * 2
+    details[eng_keys.ELEMENT_LENGTH] = np.linalg.norm(emj)
+    details[eng_keys.ELEMENT_WIDTH] = np.linalg.norm(emn)
     details[eng_keys.FIRST_ELEMENT_POSITION] = list(probe[h5_keys.ELEMENT_POSITION][0, :])
     details[eng_keys.LAST_ELEMENT_POSITION] = list(probe[h5_keys.ELEMENT_POSITION][-1, :])
     details[eng_keys.MID_POINT_POSITION] = list(np.mean(probe[h5_keys.ELEMENT_POSITION], axis = 0))
     details[eng_keys.ACTIVE_VECTOR] = e1
     details[eng_keys.PASSIVE_VECTOR] = e2
     details[eng_keys.NORMAL_VECTOR] = e3 
-    
-    # details[eng_keys.FIRST_VECTOR] = e1
-    # details[eng_keys.SECOND_VECTOR] = e2
-
+    details[eng_keys.CENTRE_FREQUENCY] = probe[h5_keys.CENTRE_FREQUENCY]
+    details[eng_keys.ELEMENT_SHAPE] = fn_el_shape_code_to_string(int(np.mean(probe['ELEMENT_SHAPE'])))
     details[eng_keys.MATCH] = np.exp(log_likelihood) * 100
     
     return details
@@ -79,7 +78,8 @@ def fn_test_for_2D_matrix_probe(probe, relative_tolerance = utils.default_tolera
     log_likelihood += np.sum(loglikelihood_pitch) #must be even pitch in both dims
        
     #Check elements same
-    log_likelihood += fn_check_elements_all_same(probe, relative_tolerance)
+    lik, emj, emn = fn_check_elements_all_same(probe, relative_tolerance)
+    log_likelihood += lik
     
     #For 2D probe, first and second vectors should be from principle components. Normal vector from maj x min
     e1 = v[0]
@@ -93,18 +93,71 @@ def fn_test_for_2D_matrix_probe(probe, relative_tolerance = utils.default_tolera
 
     #Add the details - note numbers are not rounded at this point
     details[eng_keys.PITCH] = pitch
+    details[eng_keys.ELEMENT_SIZE] = [np.abs(np.dot(emj, e1) + np.dot(emn, e1)),
+                                      np.abs(np.dot(emj, e2) + np.dot(emn, e2))] #Size is projected onto the two principle directions of the array
     details[eng_keys.NUMBER_OF_ELEMENTS] = no_elements
     details[eng_keys.FIRST_ELEMENT_POSITION] = list(probe[h5_keys.ELEMENT_POSITION][0, :])
     details[eng_keys.LAST_ELEMENT_POSITION] = list(probe[h5_keys.ELEMENT_POSITION][-1, :])
     details[eng_keys.FIRST_VECTOR] = e1 
     details[eng_keys.SECOND_VECTOR] = e2
     details[eng_keys.NORMAL_VECTOR] = e3
+    details[eng_keys.CENTRE_FREQUENCY] = probe[h5_keys.CENTRE_FREQUENCY]
+    details[eng_keys.ELEMENT_SHAPE] = fn_el_shape_code_to_string(int(np.mean(probe['ELEMENT_SHAPE'])))
     details[eng_keys.MATCH] = np.exp(log_likelihood) * 100
     
     return details
 
+def fn_test_for_2D_other_probe(probe, relative_tolerance = utils.default_tolerance):
+    details = {eng_keys.TYPE: eng_keys.PROBE_TYPE_2D_OTHER, eng_keys.MATCH: 0}
+    log_likelihood = 0
+    
+    #Analyse element positions
+    (q, v, no_dims, loglikelihood_dim, pitch, loglikelihood_pitch, no_per_dim) = \
+        utils.fn_estimate_params_of_point_cloud(probe[h5_keys.ELEMENT_POSITION], relative_tolerance)
+    
+    no_elements = probe[h5_keys.ELEMENT_POSITION].shape[0]
+    
+    #Likelihood of being 2D array    
+    log_likelihood += loglikelihood_dim[1] # index one because this is for 2D array
+    
+    #Check elements same
+    lik, emj, emn = fn_check_elements_all_same(probe, relative_tolerance)
+    #log_likelihood += lik
+    
+    #For 2D probe, first and second vectors should be from principle components. Normal vector from maj x min
+    e1 = v[0]
+    if len(v) > 1:
+        e2 = v[1]
+    else:
+        e2 = np.mean(probe[h5_keys.ELEMENT_MAJOR], axis = 0)
+        e2 /= np.linalg.norm(e2)
+    e3 = np.cross(e1, e2)
+    
 
+    #Add the details - note numbers are not rounded at this point
+    details[eng_keys.PITCH] = pitch
+    details[eng_keys.ELEMENT_SIZE] = [np.linalg.norm(emj), np.linalg.norm(emn)] #Size is projected onto the two principle directions of the array
+    details[eng_keys.NUMBER_OF_ELEMENTS] = no_elements
+    details[eng_keys.FIRST_ELEMENT_POSITION] = list(probe[h5_keys.ELEMENT_POSITION][0, :])
+    details[eng_keys.LAST_ELEMENT_POSITION] = list(probe[h5_keys.ELEMENT_POSITION][-1, :])
+    details[eng_keys.FIRST_VECTOR] = e1 
+    details[eng_keys.SECOND_VECTOR] = e2
+    details[eng_keys.NORMAL_VECTOR] = e3
+    details[eng_keys.CENTRE_FREQUENCY] = probe[h5_keys.CENTRE_FREQUENCY]
+    details[eng_keys.ELEMENT_SHAPE] = fn_el_shape_code_to_string(int(np.mean(probe['ELEMENT_SHAPE'])))
+    details[eng_keys.MATCH] = np.exp(log_likelihood) * 100
+    
+    return details
 #Internal functions
+
+def fn_el_shape_code_to_string(code):
+    if code == 1:
+        return eng_keys.SHAPE_RECTANGULAR
+    if code == 2:
+        return eng_keys.SHAPE_ELLIPTICAL
+    if code == 3:
+        return eng_keys.SHAPE_ANNULAR
+    return eng_keys.SHAPE_UNKNOWN
 
 def fn_vector_best_fit_line(points):
     # This came from ChatGPT!
@@ -139,6 +192,8 @@ def fn_calculate_distance_to_line(point, lineection, point_on_line):
 def fn_check_elements_all_same(probe, relative_tolerance):
     dimensional_tolerance = relative_tolerance * utils.fn_representative_scale_of_points(probe[h5_keys.ELEMENT_POSITION])
     log_likelihood = 0
-    log_likelihood += utils.fn_normal_log_likelihood_rows_are_same(probe[h5_keys.ELEMENT_MAJOR], dimensional_tolerance)
-    log_likelihood += utils.fn_normal_log_likelihood_rows_are_same(probe[h5_keys.ELEMENT_MINOR], dimensional_tolerance)
-    return log_likelihood
+    (lik, emj) = utils.fn_normal_log_likelihood_rows_are_same(probe[h5_keys.ELEMENT_MAJOR], dimensional_tolerance)
+    log_likelihood += lik
+    (lik, emn) = utils.fn_normal_log_likelihood_rows_are_same(probe[h5_keys.ELEMENT_MINOR], dimensional_tolerance)
+    log_likelihood += lik
+    return log_likelihood, emj, emn

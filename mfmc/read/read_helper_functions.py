@@ -33,7 +33,9 @@ def fn_analyse_probe(probe, relative_tolerance = 0.000001):
            
     return details
 
-UNITS = {'m': ['mm', 1e3], 'rads': ['degs', 180 / np.pi]}
+UNITS = {'m': ['mm', 1e3],
+         'rads': ['degs', 180 / np.pi],
+         'Hz': ['MHz', 1e-6]}
 
 def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS):
     k_max = np.max([len(k) for k in list(d.keys())])
@@ -48,19 +50,22 @@ def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS):
             if u:
                 u = u.group(1)
                 if u in units.keys():
-                    v *= units[u][1]
+                    v_print = v * units[u][1]
                     units_to_print = units[u][0]
                 else:
+                    v_print = v
                     units_to_print = u
                 k = k[:len(k) - len(u) - 3]
-            if np.asarray(v).dtype.kind in set('i'):
+            else:
+                v_print = v
+            if np.asarray(v_print).dtype.kind in set('i'):
                 fmt_str = '%i'
             else:
                 fmt_str = ('%.' + str(decimal_places) + 'f')
-            if len(v) > 1:
-                s = '(' + ', '.join([fmt_str % vv for vv in v]) + ') ' + units_to_print
+            if len(v_print) > 1:
+                s = '(' + ', '.join([fmt_str % vv for vv in v_print]) + ') ' + units_to_print
             else:
-                s = fmt_str % v +' ' + units_to_print
+                s = fmt_str % v_print +' ' + units_to_print
         else:
             s = str(v)
         print(' ' * (k_max - len(k)) + k + ':', s)

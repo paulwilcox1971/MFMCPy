@@ -21,6 +21,7 @@ LAST_ELEMENT_POSITION = 'Last element position (m)'
 MID_POINT_POSITION = 'Probe mid-point (m)'
 NORMAL_VECTOR ='Probe normal (vec)'
 CENTRE_FREQUENCY = 'Centre frequency (Hz)'
+ELEMENT_SHAPE = 'Element shape'
 WARNINGS = 'Warnings'
 
 #1D linear arrays
@@ -34,9 +35,16 @@ FIRST_VECTOR = 'First vector direction (vec)'   #Used for 2D arrays rather than 
 SECOND_VECTOR = 'Second vector direction (vec)' #Used for 2D arrays rather than passive direction
 ELEMENT_SIZE = 'Element size (m)'         #Used for 2D arrays
 
+#Element shapes
+SHAPE_RECTANGULAR = 'Rectangular'
+SHAPE_ELLIPTICAL = 'Elliptical'
+SHAPE_ANNULAR = 'Annular'
+SHAPE_UNKNOWN = 'Unknown'
+
 #Types of probe
 PROBE_TYPE_1D_LINEAR = '1D linear'
 PROBE_TYPE_2D_MATRIX = '2D matrix'
+PROBE_TYPE_2D_OTHER = '2D other'
 
 #suffix in names used to indicate vectors where only direction (not sign) matters
 DIRECTION_ONLY_SUFFIX = '(vec)'
