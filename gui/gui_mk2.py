@@ -19,7 +19,7 @@ os.chdir(os.sep.join(dir_path.split(os.sep)[0:-1]))
 import mfmc as m
 
 fname = os.sep.join(['example MFMC files', 'unit-test test file.mfmc'])
-#fname = os.sep.join(['example MFMC files', 'some probes2.mfmc'])
+fname = os.sep.join(['example MFMC files', 'some probes2.mfmc'])
 
 
 class cl_mfmc_explorer:
@@ -58,8 +58,19 @@ class cl_mfmc_explorer:
         # self.text2 = tk.Text(self.root, height=12)
         # self.text2.grid(column = 2, row = 0, rowspan = 2, sticky = 'nsew', padx=5, pady=5)
         
-        # fig = Figure(figsize = (5, 5), dpi = 100) 
-        # self.canvas = FigureCanvasTkAgg(fig,  master = self.text2)
+       
+      
+      
+        # creating the Tkinter canvas 
+        # containing the Matplotlib figure 
+        
+        
+        self.fig = Figure(figsize = (5, 5), dpi = 100) 
+        self.canvas = FigureCanvasTkAgg(self.fig,  master = self.root)
+        self.canvas.get_tk_widget().grid(column = 3, row = 0, rowspan = 2, sticky = 'nsew', padx=5, pady=5)
+        
+        
+        
         
 
     def fn_refresh_tree(self):
@@ -118,10 +129,23 @@ class cl_mfmc_explorer:
                 d = self.seq_dict[self.tree_ids_key[s_id]][self.tree_ids_field[s_id]]
             if tp == m.strs.h5_keys.PROBE:
                 d = self.probe_dict[self.tree_ids_key[s_id]][self.tree_ids_field[s_id]]
+                self.fn_plot_probe(self.probe_dict[self.tree_ids_key[s_id]])
             if tp == m.strs.h5_keys.LAW:
                 d = self.law_dict[self.tree_ids_key[s_id]][self.tree_ids_field[s_id]]
             self.fn_show_detail(d)
+        
         return
+    
+    def fn_plot_probe(self, p): 
+        x, y, z = p[m.strs.h5_keys.ELEMENT_POSITION].T
+        # list of squares 
+        #y = [i**2 for i in range(101)] # adding the subplot 
+        plot1 = self.fig.add_subplot(111) 
+      
+        # plotting the graph 
+        plot1.plot(x, y, 'r.') 
+
+        self.canvas.draw()
 
     def fn_new_file_selected(self, fname):
         #Open file
@@ -168,7 +192,7 @@ def fn_print_to_string(*args, **kwargs):
 
 def select_file():
     filetypes = (
-        ('text files', '*.mfmc'),
+        ('MFMC files', '*.mfmc'),
         ('All files', '*.*')
     )
 
@@ -183,25 +207,7 @@ def select_file():
     )
 
 
-def plot(): 
-  
-    # the figure that will contain the plot 
-    fig = Figure(figsize = (5, 5), 
-                 dpi = 100) 
-  
-    # list of squares 
-    y = [i**2 for i in range(101)] 
-  
-    # adding the subplot 
-    plot1 = fig.add_subplot(111) 
-  
-    # plotting the graph 
-    plot1.plot(y) 
-  
-    # creating the Tkinter canvas 
-    # containing the Matplotlib figure 
-    canvas = FigureCanvasTkAgg(fig,  master = window)   
-    canvas.draw()
+
 #open_button.pack(expand=True)
 
 root = tk.Tk()
