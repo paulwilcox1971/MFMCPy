@@ -47,7 +47,7 @@ def fn_compare_dicts(d1, d2, places = 8, ignore_direction_for_keys_with_this_suf
                 if ignore_direction_for_keys_with_this_suffix and k.endswith(ignore_direction_for_keys_with_this_suffix):
                     dp = np.abs(dp) #special case where parameter is unit vector and sign doesn't matter as long as direciton correct
                 if (dp - 1.0) > (10 ** (-places)):
-                    err_msg.append('Value ' + k + ' mismatch:' + p1[k] + ' != ' + p2[k])
+                    err_msg.append('Value ' + k + ' mismatch with relative error of ' + str(dp - 1.0))
                     success = False
                     continue
     return (success, err_msg)

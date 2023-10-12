@@ -50,7 +50,9 @@ def fn_probe_test(create_fn, test_fn, input_params, s, obj):
         return False
             
     #Compare the recovered parameters to the input ones
-    [success, err_msg] = m.utils.fn_compare_dicts(probe_details, input_params, ignore_direction_for_keys_with_this_suffix = m.strs.eng_keys.DIRECTION_ONLY_SUFFIX)
+    [success, err_msg] = m.utils.fn_compare_dicts(probe_details, input_params, 
+                                                  ignore_direction_for_keys_with_this_suffix = m.strs.eng_keys.DIRECTION_ONLY_SUFFIX,
+                                                  places = 12)
     obj.assertTrue(success, err_msg)
     return True
 
@@ -60,12 +62,26 @@ class cl_test_probe_testers(unittest.TestCase):
         for i in range(1, no_trials):
             rnd = np.random.default_rng(i)
             input_params = {}
-            input_params[m.strs.eng_keys.TYPE] = m.strs.eng_keys.PROBE_TYPE_1D_LINEAR
-            input_params[m.strs.eng_keys.PITCH] =         rnd.random() * 5e-3 + 0.1e-3
+            input_params[m.strs.eng_keys.TYPE] =               m.strs.eng_keys.PROBE_TYPE_1D_LINEAR
+            input_params[m.strs.eng_keys.PITCH] =              rnd.random() * 5e-3 + 0.1e-3
             input_params[m.strs.eng_keys.ELEMENT_WIDTH] =      (rnd.random() * 0.8 + 0.1) * input_params[m.strs.eng_keys.PITCH];
             input_params[m.strs.eng_keys.ELEMENT_LENGTH] =     rnd.random() * 20e-3 + 1e-3;
-            input_params[m.strs.eng_keys.NUMBER_OF_ELEMENTS] =   rnd.integers(2, 129)
-            input_params[m.strs.eng_keys.MID_POINT_POSITION] =    rnd.random(3) - 0.5
+            input_params[m.strs.eng_keys.NUMBER_OF_ELEMENTS] = rnd.integers(2, 129)
+            input_params[m.strs.eng_keys.MID_POINT_POSITION] = rnd.random(3) - 0.5
+            #Random rotation
+            tx = 2 * (rnd.random() - 1) * np.pi
+            ty = 2 * (rnd.random() - 1) * np.pi
+            tz = 2 * (rnd.random() - 1) * np.pi
+            input_params[m.strs.eng_keys.ACTIVE_VECTOR] =       m.utils.fn_rotate_about_z_axis(
+                                                                    m.utils.fn_rotate_about_y_axis(
+                                                                        m.utils.fn_rotate_about_x_axis([1, 0, 0], tx),
+                                                                        ty),
+                                                                    tz)
+            input_params[m.strs.eng_keys.PASSIVE_VECTOR] =      m.utils.fn_rotate_about_z_axis(
+                                                                    m.utils.fn_rotate_about_y_axis(
+                                                                        m.utils.fn_rotate_about_x_axis([0, 1, 0], tx),
+                                                                        ty),
+                                                                    tz)
             msg_str = ' [Seed = %i]' % i
             #Test it
             if not fn_probe_test(m.write.fn_1D_linear_probe, m.read.fn_test_for_1D_linear_probe, input_params, msg_str, self):
@@ -73,17 +89,31 @@ class cl_test_probe_testers(unittest.TestCase):
     def test_matrix(self):
          #matrix probe
          for i in range(1, no_trials):
-             rnd = np.random.default_rng(i)
-             input_params = {}
-             input_params[m.strs.eng_keys.TYPE] = m.strs.eng_keys.PROBE_TYPE_2D_MATRIX
-             input_params[m.strs.eng_keys.PITCH] =         rnd.random(size = 2) * 5e-3 + 0.1e-3
-             input_params[m.strs.eng_keys.ELEMENT_SIZE] =      (rnd.random(size = 2) * 0.8 + 0.1) * input_params[m.strs.eng_keys.PITCH];
-             input_params[m.strs.eng_keys.NUMBER_OF_ELEMENTS] =   rnd.integers(2, 12, size = 2)
-             input_params[m.strs.eng_keys.MID_POINT_POSITION] =    rnd.random(3) - 0.5
-             msg_str = ' [Seed = %i]' % i
-             #Test it
-             if not fn_probe_test(m.write.fn_2D_matrix_probe, m.read.fn_test_for_2D_matrix_probe, input_params, msg_str, self):
-                 print(msg_str)
+            rnd = np.random.default_rng(i)
+            input_params = {}
+            input_params[m.strs.eng_keys.TYPE] = m.strs.eng_keys.PROBE_TYPE_2D_MATRIX
+            input_params[m.strs.eng_keys.PITCH] =         rnd.random(size = 2) * 5e-3 + 0.1e-3
+            input_params[m.strs.eng_keys.ELEMENT_SIZE] =      (rnd.random(size = 2) * 0.8 + 0.1) * input_params[m.strs.eng_keys.PITCH];
+            input_params[m.strs.eng_keys.NUMBER_OF_ELEMENTS] =   rnd.integers(2, 12, size = 2)
+            input_params[m.strs.eng_keys.MID_POINT_POSITION] =    rnd.random(3) - 0.5
+            msg_str = ' [Seed = %i]' % i
+            #Random rotation
+            tx = 2 * (rnd.random() - 1) * np.pi
+            ty = 2 * (rnd.random() - 1) * np.pi
+            tz = 2 * (rnd.random() - 1) * np.pi
+            input_params[m.strs.eng_keys.FIRST_VECTOR] =       m.utils.fn_rotate_about_z_axis(
+                                                                    m.utils.fn_rotate_about_y_axis(
+                                                                        m.utils.fn_rotate_about_x_axis([1, 0, 0], tx),
+                                                                        ty),
+                                                                    tz)
+            input_params[m.strs.eng_keys.SECOND_VECTOR] =      m.utils.fn_rotate_about_z_axis(
+                                                                    m.utils.fn_rotate_about_y_axis(
+                                                                        m.utils.fn_rotate_about_x_axis([0, 1, 0], tx),
+                                                                        ty),
+                                                        tz)
+            #Test it
+            if not fn_probe_test(m.write.fn_2D_matrix_probe, m.read.fn_test_for_2D_matrix_probe, input_params, msg_str, self):
+                print(msg_str)
 
 unittest.main()
 
