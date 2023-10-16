@@ -44,6 +44,9 @@ def fn_parse_shape_string_in_spec(shape_str):
     shape_str = tuple(reversed(shape_str)) 
     return shape_str
 
-default_spec = fn_load_specification(utils.default_spec_fname)
+try:
+    default_spec = fn_load_specification(utils.default_spec_fname)
+except:
+    default_spec = None
 
 expandable_dims = ['N_M', 'N_F<m>', 'N_B<m>']

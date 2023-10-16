@@ -8,4 +8,4 @@ Created on Fri Sep 22 16:34:46 2023
 #Default values
 
 default_tolerance = 0.000001
-default_spec_fname = 'docs/MFMC Specification 2.0.0.xlsx'
+default_spec_fname = 'mfmc/spec/MFMC Specification 2.0.0.xlsx'
