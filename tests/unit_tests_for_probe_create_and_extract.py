@@ -13,6 +13,7 @@ import unittest
 import numpy as np
 
 import os
+import sys
 
 
 #Set working directory one level up from where this file is

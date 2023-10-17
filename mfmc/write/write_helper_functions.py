@@ -6,29 +6,19 @@ Created on Fri Aug 18 12:08:35 2023
 """
 
 import numpy as np
-from ..utils import fn_close_file 
+from ..utils import * #all functions in utils are accessible without prefix
+from ..spec import *
+#from ..strs.h5_keys import *
+#from ..strs.string_table import *
 from ..strs import h5_keys
 from ..strs import eng_keys
 
+# import sys
+# sys.path.append('..') #So mfmc can be found in parent directory
+# import mfmc
+
+
 def fn_1D_linear_probe(input_params):
-    """Create dictionary of MFMC data to describe 1D linear array probe.
-    
-    :param input_params: Dictionary of engineering input parameters. See
-        below
-    :type input_params: dictionary
-    :return: MFMC dictionary
-    :rtype: dictionary
-    
-    Input parameter dictionary (defaults for optional params):
-        * eng_keys.NUMBER_OF_ELEMENTS (int)
-        * eng_keys.PITCH (float)
-        * eng_keys.ELEMENT_LENGTH (float)
-        * eng_keys.ELEMENT_WIDTH (float)
-        * eng_keys.MID_POINT_POSITION ((float, float, float)) = (0.0, 0.0, 0.0)
-        * eng_keys.NORMAL_VECTOR ((float, float, float)) = (0.0, 0.0, 1.0)
-        * eng_keys.ACTIVE_VECTOR ((float, float, float)) = (1.0, 0.0, 0.0)
-        * eng_keys.CENTRE_FREQUENCY (float) = 1.0e6
-    """
     default_params = {eng_keys.MID_POINT_POSITION:  (0.0, 0.0, 0.0), 
                       eng_keys.NORMAL_VECTOR:       (0.0, 0.0, 1.0),
                       eng_keys.ACTIVE_VECTOR:       (1.0, 0.0, 0.0),
@@ -49,23 +39,6 @@ def fn_1D_linear_probe(input_params):
             h5_keys.ELEMENT_SHAPE: np.ones(input_params[eng_keys.NUMBER_OF_ELEMENTS])}
 
 def fn_2D_matrix_probe(input_params):
-    """Create dictionary of MFMC data to describe 2D matrix array probe.
-    
-    :param input_params: Dictionary of engineering input parameters. See
-        below
-    :type input_params: dictionary
-    :return: MFMC dictionary
-    :rtype: dictionary
-    
-    Input parameter dictionary (defaults for optional params):
-        * eng_keys.NUMBER_OF_ELEMENTS ((int, int))
-        * eng_keys.PITCH ((float, float))
-        * eng_keys.ELEMENT_SIZE ((float, float))
-        * eng_keys.MID_POINT_POSITION ((float, float, float)) = (0.0, 0.0, 0.0)
-        * eng_keys.NORMAL_VECTOR ((float, float, float)) = (0.0, 0.0, 1.0)
-        * eng_keys.ACTIVE_VECTOR ((float, float, float)) = (1.0, 0.0, 0.0)
-        * eng_keys.CENTRE_FREQUENCY (float) = 1.0e6
-    """
     default_params = {eng_keys.MID_POINT_POSITION:  (0.0, 0.0, 0.0), 
                       eng_keys.NORMAL_VECTOR:       (0.0, 0.0, 1.0),
                       eng_keys.FIRST_VECTOR:       (1.0, 0.0, 0.0),
@@ -73,9 +46,9 @@ def fn_2D_matrix_probe(input_params):
     for d in default_params.keys():
         if d not in input_params.keys():
             input_params[d] = default_params[d]
-    p = _fn_expand_if_nesc(input_params[eng_keys.PITCH])
-    s = _fn_expand_if_nesc(input_params[eng_keys.ELEMENT_SIZE])
-    n = _fn_expand_if_nesc(input_params[eng_keys.NUMBER_OF_ELEMENTS])
+    p = fn_expand_if_nesc(input_params[eng_keys.PITCH])
+    s = fn_expand_if_nesc(input_params[eng_keys.ELEMENT_SIZE])
+    n = fn_expand_if_nesc(input_params[eng_keys.NUMBER_OF_ELEMENTS])
     nt = n[0] * n[1]
     input_params[eng_keys.SECOND_VECTOR] = np.cross(input_params[eng_keys.NORMAL_VECTOR], input_params[eng_keys.FIRST_VECTOR])
     (t1, t2) = np.meshgrid((np.array(range(n[0])) - (n[0] - 1) / 2) * p[0],  (np.array(range(n[1])) - (n[1] - 1) / 2) * p[1])
@@ -91,10 +64,7 @@ def fn_2D_matrix_probe(input_params):
             h5_keys.CENTRE_FREQUENCY: input_params[eng_keys.CENTRE_FREQUENCY], 
             h5_keys.ELEMENT_SHAPE: np.ones(input_params[eng_keys.NUMBER_OF_ELEMENTS])}
 
-#------------------------------------------------------------------------------
-
-def _fn_expand_if_nesc(x):
-    """Expands a scalar argument to a tuple of two identical values"""
+def fn_expand_if_nesc(x):
     if np.isscalar(x):
         x = (x, x)
     return x
