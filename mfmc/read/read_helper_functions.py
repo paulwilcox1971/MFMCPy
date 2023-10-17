@@ -18,7 +18,15 @@ import mfmc
 PROBE_TEST_FUNCTION_PREFIX = 'fn_test_for'
 
 def fn_analyse_probe(probe, relative_tolerance = 0.000001):
-    #details = {'Type': 'Unknown', 'Match'}
+    """Try all available probe test functions on MFMC probe data and return
+    details from one that gives best match
+    
+    :param probe: MFMC probe data read from MFMC file.
+    :type probe: dictionary
+    :param relative_tolerance: Relative tolerance for matches expressed as a 
+        decimal (e.g. 0.01 = 1% tolerance).
+    :type relative_tolerance: float
+    """
     match = 0
     details = {}
     #get a list of the probe tester functions in file
@@ -37,7 +45,17 @@ UNITS = {'m': ['mm', 1e3],
          'rads': ['degs', 180 / np.pi],
          'Hz': ['MHz', 1e-6]}
 
+#Following should go in utilities
 def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS):
+    """Print contents of dictionary nicely.
+    
+    :param d: Dictionary to print
+    :type d: dictionary
+    :param decimal_places: Number of decimal places to use for output.
+    :type decimal_places: itn
+    :return: probe details.
+    :rtype: dictionary
+    """
     k_max = np.max([len(k) for k in list(d.keys())])
     for k in d.keys():
         v = d[k]

@@ -36,7 +36,7 @@ def fn_create_group(MFMC, group):
     """Creates a group in MFMC file if it does not already exist
     
     :param MFMC: an open MFMC file or existing group within an open MFMC file.
-    :type MFMC: HDF5 file or HDF5 group object.
+    :type MFMC: HDF5 file or HDF5 group object
     :param group: name of group to create, which should can include path to a 
         group, which will be interpreted relative to MFMC, so if MFMC is the
         object `group1` and `group = group2/new_group` then the group created 
@@ -90,6 +90,7 @@ def fn_add_probe(MFMC, probe, name = None, warn_if_probe_exists = True, spec = d
     :param spec: Optional. Python dictionary containing the MFMC specification
         used to write the probe details to the file. Default is to use the
         default MFMC specification loaded from spreadsheet in /mfmc/spec.
+    :type spec: dictionary
     :return: Name of probe group.
     :rtype: string
     """

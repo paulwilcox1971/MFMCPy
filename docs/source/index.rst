@@ -8,6 +8,7 @@ Welcome to MFMC's documentation!
 
 .. toctree::
    write
+   read
    :maxdepth: 1
 
 
