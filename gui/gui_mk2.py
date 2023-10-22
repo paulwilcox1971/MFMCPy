@@ -11,6 +11,8 @@ from tkinter.messagebox import showinfo
 
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,  NavigationToolbar2Tk
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 
 #Set working directory one level up from where this file is
 path = os.path.abspath(__file__)
@@ -65,7 +67,8 @@ class cl_mfmc_explorer:
         # containing the Matplotlib figure 
         
         
-        self.fig = Figure(figsize = (5, 5), dpi = 100) 
+        self.fig = Figure(figsize = (5, 5), dpi = 100)
+        self.ax = self.fig.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.fig,  master = self.root)
         self.canvas.get_tk_widget().grid(column = 3, row = 0, rowspan = 2, sticky = 'nsew', padx=5, pady=5)
         
@@ -137,13 +140,14 @@ class cl_mfmc_explorer:
         return
     
     def fn_plot_probe(self, p): 
-        x, y, z = p[m.strs.h5_keys.ELEMENT_POSITION].T
+        # x, y, z = p[m.strs.h5_keys.ELEMENT_POSITION].T
         # list of squares 
         #y = [i**2 for i in range(101)] # adding the subplot 
-        plot1 = self.fig.add_subplot(111) 
+        
+        fn_plot_probe(self.ax, p)
       
         # plotting the graph 
-        plot1.plot(x, y, 'r.') 
+        # plot1.plot(x, y, 'r.') 
 
         self.canvas.draw()
 
@@ -206,7 +210,25 @@ def select_file():
         message=filename
     )
 
-
+def fn_plot_probe(ax, probe):
+    xc, yc, zc = probe[m.strs.h5_keys.ELEMENT_POSITION].T
+    e1x, e1y, e1z = probe[m.strs.h5_keys.ELEMENT_MAJOR].T
+    e2x, e2y, e2z = probe[m.strs.h5_keys.ELEMENT_MINOR].T
+    
+    w1 = np.sqrt(e1x ** 2 + e1y ** 2 )
+    w2 = np.sqrt(e2x ** 2 + e2y ** 2 )
+    theta = np.arctan2(e1y, e2y)
+    
+    ax.clear()
+    ax.axis('equal')
+    
+    elements = [Rectangle((x - ww1 / 2, y - ww2 / 2), ww1, ww2, angle = t * 180 / np.pi, rotation_point = 'center')
+                  for x, y, ww1, ww2, t in zip(xc, yc, w1, w2, theta)]
+    pc = PatchCollection(elements, facecolor='r',
+                     edgecolor='none', alpha=0.5)
+    #Rectangle(xy, width, height, *, angle=0.0, rotation_point='xy', **kwargs)[source]
+    ax.add_collection(pc)
+    ax.plot(xc, yc, 'k.')     
 
 #open_button.pack(expand=True)
 
