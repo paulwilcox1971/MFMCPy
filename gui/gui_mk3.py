@@ -1,3 +1,6 @@
+#for debugging with specific file use this at Spyder console
+#runfile('C:/Users/mepdw/Git/MFMCPy/gui/gui_mk3.py', args='\'example MFMC files\' \'unit-test test file.mfmc\'', wdir='C:/Users/mepdw/Git/MFMCPy/gui')
+
 import numpy as np
 
 import os
@@ -5,7 +8,7 @@ import sys
 import io
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, Menu
 from tkinter import filedialog as fd
 from tkinter.messagebox import showinfo
 
@@ -23,10 +26,6 @@ os.chdir(os.sep.join(dir_path.split(os.sep)[0:-1]))
 
 import mfmc as m
 
-fname = os.sep.join(['example MFMC files', 'unit-test test file.mfmc'])
-fname = os.sep.join(['example MFMC files', 'some probes3.mfmc'])
-
-
 class cl_mfmc_explorer:
     seq_list = []
     probe_list = []
@@ -39,39 +38,66 @@ class cl_mfmc_explorer:
 
     def __init__(self, root):
         self.root = root
+        self.current_dir = os.getcwd()
         root.protocol("WM_DELETE_WINDOW", self.fn_on_closing)
 
     def fn_on_closing(self):
-        m.read.fn_close_file(self.MFMC)
+        try:
+            m.read.fn_close_file(self.MFMC)
+        except:
+            pass 
         self.root.destroy()
         
     def fn_set_up_window(self):
         self.root.title("MFMC explorer")
         self.root.geometry('1550x750')
-        self.root.columnconfigure(0, weight=1)
-        self.root.columnconfigure(1, weight=1)
-        self.root.columnconfigure(2, weight=1)
-        self.root.columnconfigure(3, weight=1)
-        self.root.columnconfigure(4, weight=1)
+        self.root.columnconfigure(0, weight = 1)
+        self.root.columnconfigure(1, weight = 1)
+        self.root.columnconfigure(2, weight = 1)
+        self.root.columnconfigure(3, weight = 1)
         self.root.rowconfigure(0, weight=1)
+        
+        #Add menu
+        self.menubar = Menu(self.root)
+        self.root.config(menu = self.menubar)
+        self.file_menu = Menu(self.menubar, tearoff = 0)
+        self.file_menu.add_command(label = 'Open', command = self.select_file)
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label = 'Exit', command = self.root.destroy)
+        self.menubar.add_cascade(label = "File", menu = self.file_menu)
+
+        
+        
+        self.tabs = ttk.Notebook(root)
+        
+        self.tab_text = ttk.Frame(self.tabs)
+        self.tab_text.columnconfigure(0, weight = 1)
+        self.tab_text.rowconfigure(0, weight = 1)
+
+        self.tab_graphic = ttk.Frame(self.tabs)
+        self.tab_graphic.columnconfigure(0, weight = 1)
+        self.tab_graphic.rowconfigure(0, weight = 1)
+        
+        self.tabs.add(self.tab_graphic, text = 'Plot')
+        self.tabs.add(self.tab_text, text = 'Data')
+
+        self.tabs.grid(column = 1, row = 0, rowspan = 1, columnspan = 3, sticky = 'nsew', padx=5, pady=5)
+        
         #add the tree view
         self.tree = ttk.Treeview(self.root)
         self.tree.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
-        #add the text bit
-        self.text = tk.Text(self.root, height=12)
-        self.text.grid(column = 1, row = 0, rowspan = 1, columnspan = 2, sticky = 'nsew', padx=5, pady=5)
         self.tree.bind('<ButtonRelease-1>', self.fn_tree_item_click)
+        
+        #add the text bit
+        self.text = tk.Text(self.tab_text, height = 12)
+        self.text.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        
         #add the figure        
-        self.fig = Figure(figsize = (5, 5), dpi = 100)
+        #self.fig = Figure(figsize = (5, 5), dpi = 100)
+        self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
-        # self.ax = self.fig.add_subplot(111, projection='3d')
-        
-        self.canvas = FigureCanvasTkAgg(self.fig,  master = self.root)
-        self.canvas.get_tk_widget().grid(column = 3, row = 0, rowspan = 1, columnspan = 2, sticky = 'nsew', padx=5, pady=5)
-        
-        
-        
-        
+        self.canvas = FigureCanvasTkAgg(self.fig,  master = self.tab_graphic)
+        self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
 
     def fn_refresh_tree(self):
         #Clear everything
@@ -147,6 +173,8 @@ class cl_mfmc_explorer:
         self.canvas.draw()
 
     def fn_new_file_selected(self, fname):
+        if not fname:
+            return
         #Open file
         self.MFMC = m.read.fn_open_file_for_reading(fname)
         
@@ -181,6 +209,14 @@ class cl_mfmc_explorer:
         if self.selected_item in self.law_list:
              self.fn_show_detail(m.read.fn_read_law(self.MFMC, self.selected_item))
         return
+    
+    def select_file(self):
+        filetypes = (
+            ('MFMC files', '*.mfmc'),
+            ('All files', '*.*')
+        )
+        filename = fd.askopenfilename(title = 'Open', initialdir = self.current_dir, filetypes = filetypes)
+        self.fn_new_file_selected(filename)
 
 def fn_print_to_string(*args, **kwargs):
     output = io.StringIO()
@@ -189,31 +225,25 @@ def fn_print_to_string(*args, **kwargs):
     output.close()
     return contents
 
-def select_file():
-    filetypes = (
-        ('MFMC files', '*.mfmc'),
-        ('All files', '*.*')
-    )
+#Actual execution code
+if len(sys.argv) > 1:
+    try:
+        os.chdir(sys.argv[1])
+    except:
+        print('Directory does not exist')
 
-    filename = fd.askopenfilename(
-        title='Open a file',
-        initialdir='/',
-        filetypes=filetypes)
-
-    showinfo(
-        title='Selected File',
-        message=filename
-    )
-
-
-#open_button.pack(expand=True)
+initial_file = None
+if len(sys.argv) > 2:
+    try:
+        initial_file = sys.argv[2]
+    except:
+        print('File does not exist')
 
 root = tk.Tk()
-
-q = cl_mfmc_explorer(root)
-q.fn_set_up_window()
-q.fn_new_file_selected(fname)
-
+mfmc_explorer = cl_mfmc_explorer(root)
+mfmc_explorer.fn_set_up_window()
+mfmc_explorer.fn_new_file_selected(initial_file)
+    
 root.mainloop()
 
 
