@@ -14,7 +14,7 @@ from matplotlib.widgets import Button, CheckButtons
 from ..strs import h5_keys
 from ..strs import eng_keys
 
-def fn_plot_probe(ax, probe):
+def fn_plot_probe(ax_outer, probe):
     x, y, z = probe[h5_keys.ELEMENT_POSITION].T
     e1x, e1y, e1z = probe[h5_keys.ELEMENT_MAJOR].T
     e2x, e2y, e2z = probe[h5_keys.ELEMENT_MINOR].T
@@ -24,8 +24,17 @@ def fn_plot_probe(ax, probe):
     w2 = np.sqrt(e2x ** 2 + e2y ** 2 )
     theta = np.arctan2(e1y, e1x)
     
-    ax.clear()
+    ax_outer.clear()
+    ax_outer.set_axis_off()
+    
+    rax = ax_outer.inset_axes([0.0, 0.0, 0.2, 1.0])
+    rax.set_axis_off()
+
+    ax = ax_outer.inset_axes([0.2, 0.0, 0.8, 1.0])
+    ax.set_axis_off()
     ax.axis('equal')
+    
+
         
     elements= []
 
@@ -67,7 +76,23 @@ def fn_plot_probe(ax, probe):
     lines_by_label['Major axes'] = ax.plot([x, x + e1x], [y, y + e1y], 'r', visible = False)
     lines_by_label['Minor axes'] = ax.plot([x, x + e2x], [y, y + e2y], 'g', visible = False)
     
-    rax = ax.inset_axes([0.0, 0.0, 0.2, 0.2])
+    xmin = np.min(x - np.maximum(np.abs(e1x),np.abs(e2x)))
+    xmax = np.max(x + np.maximum(np.abs(e1x),np.abs(e2x)))
+    ymin = np.min(y - np.maximum(np.abs(e1y),np.abs(e2y)))
+    ymax = np.max(y + np.maximum(np.abs(e1y),np.abs(e2y)))
+    
+    fac = 1.2
+    ax.plot([xmin, xmax], np.array([1, 1]) * (ymax - ymin) / 2 * fac, 'k')
+    ax.plot(np.array([1, 1]) * (xmax - xmin) / 2 * fac, [ymin, ymax], 'k')
+    
+    #ax.arrow(xmin, (ymax - ymin) / 2 * fac, xmax - xmin, 0, color = 'k', arrowstyle='<->', lw = 1)
+    #ax.plot(np.array([1, 1]) * (xmax - xmin) / 2 * fac, [ymin, ymax], 'k')
+    
+    
+    ax.text((xmin + xmax) / 2, (ymax - ymin) / 2 * fac, str((xmax - xmin) * 1e3), ha = 'center', va = 'center', backgroundcolor = 'w')
+    ax.text((xmax - xmin) / 2 * fac, (ymin + ymax) / 2, str((ymax - ymin) * 1e3), ha = 'center', va = 'center', backgroundcolor = 'w', rotation = 'vertical')
+    
+    
     check = CheckButtons(
         ax=rax,
         labels = lines_by_label.keys(),
