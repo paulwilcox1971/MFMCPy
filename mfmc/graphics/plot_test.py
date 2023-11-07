@@ -15,6 +15,7 @@ os.chdir(os.sep.join(dir_path.split(os.sep)[0:-2]))
 
 import mfmc as m
 from mfmc.graphics.plot_probes import fn_plot_probe
+from mfmc.graphics.plot_sequence import fn_plot_sequence
 
 
 import matplotlib.pyplot as plt
@@ -24,6 +25,7 @@ from matplotlib.collections import PatchCollection
 plt.close('all')
 
 fname = os.sep.join(['example MFMC files', 'some probes3.mfmc'])
+fname = os.sep.join(['example MFMC files', 'AS example.mfmc'])
 
 MFMC = m.read.fn_open_file_for_reading(fname)
 
@@ -31,9 +33,12 @@ probe_dict = {}
 for p in m.read.fn_get_probe_list(MFMC):
     probe_dict[p] = m.read.fn_read_probe(MFMC, p)
     
-probe = probe_dict['/PROBE<12>']
-
+probe = probe_dict['/PROBE<1>']
 
 fig, ax = plt.subplots()
-
 check = fn_plot_probe(ax, probe)
+
+seq = MFMC['/SEQUENCE<1>']
+fig, ax = plt.subplots()
+check = fn_plot_sequence(ax, seq)
+

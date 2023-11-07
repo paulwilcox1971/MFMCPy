@@ -15,10 +15,10 @@ from ..strs import h5_keys
 from ..strs import eng_keys
 
 def fn_plot_probe(ax_outer, probe):
-    x, y, z = probe[h5_keys.ELEMENT_POSITION].T
-    e1x, e1y, e1z = probe[h5_keys.ELEMENT_MAJOR].T
-    e2x, e2y, e2z = probe[h5_keys.ELEMENT_MINOR].T
-    typ = probe[h5_keys.ELEMENT_SHAPE].T
+    x, y, z = np.array(probe[h5_keys.ELEMENT_POSITION]).T
+    e1x, e1y, e1z = np.array(probe[h5_keys.ELEMENT_MAJOR]).T
+    e2x, e2y, e2z = np.array(probe[h5_keys.ELEMENT_MINOR]).T
+    typ = np.array(probe[h5_keys.ELEMENT_SHAPE]).T
     
     w1 = np.sqrt(e1x ** 2 + e1y ** 2 )
     w2 = np.sqrt(e2x ** 2 + e2y ** 2 )

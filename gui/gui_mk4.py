@@ -8,14 +8,12 @@ import sys
 import io
 
 import tkinter as tk
-from tkinter import ttk, messagebox, Menu
+from tkinter import ttk,  Menu
 from tkinter import filedialog as fd
-from tkinter.messagebox import showinfo
+#from tkinter.messagebox import showinfo
 
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,  NavigationToolbar2Tk
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.art3d import Patch3DCollection
 
 #Make sure mfmc package is on path
 path = os.path.abspath(__file__)
@@ -64,16 +62,21 @@ class cl_mfmc_explorer:
         #Add tabs
         self.tabs = ttk.Notebook(root)
         
-        self.tab_text = ttk.Frame(self.tabs)
-        self.tab_text.columnconfigure(0, weight = 1)
-        self.tab_text.rowconfigure(0, weight = 1)
-
         self.tab_graphic = ttk.Frame(self.tabs)
         self.tab_graphic.columnconfigure(0, weight = 1)
         self.tab_graphic.rowconfigure(0, weight = 1)
+
+        self.tab_data = ttk.Frame(self.tabs)
+        self.tab_data.columnconfigure(0, weight = 1)
+        self.tab_data.rowconfigure(0, weight = 1)
+
+        self.tab_check = ttk.Frame(self.tabs)
+        self.tab_check.columnconfigure(0, weight = 1)
+        self.tab_check.rowconfigure(0, weight = 1)
         
         self.tabs.add(self.tab_graphic, text = 'Plot')
-        self.tabs.add(self.tab_text, text = 'Data')
+        self.tabs.add(self.tab_data, text = 'Data')
+        self.tabs.add(self.tab_check, text = 'Check')
 
         self.tabs.grid(column = 1, row = 0, rowspan = 1, columnspan = 3, sticky = 'nsew', padx=5, pady=5)
         
@@ -82,9 +85,19 @@ class cl_mfmc_explorer:
         self.tree.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
         self.tree.bind('<ButtonRelease-1>', self.fn_tree_item_click)
         
-        #add the text bit to the text tab
-        self.text = tk.Text(self.tab_text, height = 12)
-        self.text.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        #add the text bit to the data tab
+        self.tab_data_content = tk.Text(self.tab_data, height = 12)
+        self.tab_data_content.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        
+        #add the text bit to the check tab
+        self.tab_check_content = tk.Text(self.tab_check, height = 12)
+        self.tab_check_content.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        self.tab_check_content.insert(tk.END, 'Select sequence to check')
+        
+        self.tab_check_content.tag_configure('error', foreground = 'red')
+        self.tab_check_content.tag_configure('sizetable', foreground = 'blue')
+        self.tab_check_content.tag_configure('log', foreground = 'gray')
+        self.tab_check_content.tag_configure('bold', relief='raised')
         
         #add the figure to the graphic tab
         self.fig = Figure()
@@ -94,21 +107,25 @@ class cl_mfmc_explorer:
 
             
     def fn_show_detail(self, obj_type, obj_name, obj_key):
-        self.text.delete("1.0", tk.END)
+        self.tab_data_content.delete("1.0", tk.END)
         obj = None
         plot_fn = None
         if obj_type == m.strs.h5_keys.PROBE:
             obj = m.read.fn_read_probe(self.MFMC, obj_name)
             plot_fn = self.fn_plot_probe
+            #self.fn_plot_probe(self.MFMC[obj_name])
         if obj_type == m.strs.h5_keys.SEQUENCE:
             obj = m.read.fn_read_sequence_data(self.MFMC, obj_name)
+            plot_fn = self.fn_plot_sequence
+            #self.fn_plot_sequence(self.MFMC[obj_name])
         if obj_type == m.strs.h5_keys.LAW:
             obj = m.read.fn_read_law(self.MFMC, obj_name)
+        #Add text
         if obj:
             if obj_key:
-                self.text.insert(tk.END, fn_print_to_string(obj[obj_key]))
+                self.tab_data_content.insert(tk.END, fn_print_to_string(obj[obj_key]))
             if plot_fn:
-                plot_fn(obj)
+                self.plot_handles = plot_fn(self.MFMC[obj_name])
         return
     
     
@@ -124,21 +141,17 @@ class cl_mfmc_explorer:
         obj_type = tags[0]
         obj_name = tags[1]
         obj_key = tags[2]
-        # if 'field' in tags:
-        #     obj_name = self.tree.parent(s_id)
-        #     obj_key = s_id
-        # else:
-        #     if self.tree.parent(s_id):
-        #         obj_name = s_id
-        #     else:
-        #         obj_name = None
-        #     obj_key = None
         # print(obj_type, obj_name, obj_key)
         return obj_type, obj_name, obj_key
     
     def fn_plot_probe(self, p): 
         self.probe_checkboxes = m.graphics.fn_plot_probe(self.ax, p)
         self.canvas.draw()
+
+    def fn_plot_sequence(self, s):
+        self.sequence_checkboxes = m.graphics.fn_plot_sequence(self.ax, s)
+        self.canvas.draw()
+        
 
     def fn_new_file_selected(self, fname):
         if not fname:
@@ -196,9 +209,26 @@ class cl_mfmc_explorer:
     def fn_check(self):
         obj_type, obj, obj_field = self.fn_get_current_tree_item()
         if obj_type == m.strs.h5_keys.SEQUENCE:
-            (check_log, size_table, err_list) = m.check.fn_check_sequence(self.MFMC, obj)
-        pass
-    
+            (check_log, size_table, err_list) = m.check.fn_check_sequence(self.MFMC, self.MFMC[obj])
+            self.tab_check_content.delete("1.0", tk.END)
+
+            self.tab_check_content.insert(tk.END, '\nERRORS\n', ('error', 'bold'))
+            if err_list:
+                for i in err_list:
+                    self.tab_check_content.insert(tk.END, '  ' + i + '\n', ('error'))    
+            else:
+                self.tab_check_content.insert(tk.END, '  None\n', ('error'))    
+                
+            self.tab_check_content.insert(tk.END, '\nSIZE TABLE\n', ('sizetable', 'bold'))
+            ml = max([len(i) for i in size_table.keys()])
+            for i in size_table.keys():
+                self.tab_check_content.insert(tk.END, fn_print_to_string(' ' + ' ' * (ml - len(i)) + i + ': ' + str(size_table[i])), ('sizetable'))    
+
+            ml = max([i.find(':') for i in check_log])
+            self.tab_check_content.insert(tk.END, '\nCHECK LOG\n', ('log', 'bold'))    
+            for i in check_log:
+                self.tab_check_content.insert(tk.END, ' ' + ' ' * (ml - i.find(':')) + i + '\n', ('log'))    
+            
     def fn_select_file(self):
         filetypes = (
             ('MFMC files', '*.mfmc'),
