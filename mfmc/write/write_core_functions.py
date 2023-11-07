@@ -263,7 +263,12 @@ def _fn_append_or_create_dataset(MFMC, group, name, data, spec):
         print('Not in spec!')
         return
     shape_str = fn_parse_shape_string_in_spec(spec.loc[name, 'Size or content'])
+    #Add leading singleton dimensions of insufficent dims in data to match spec
+    if len(data.shape) < len(shape_str):
+        data = np.expand_dims(data, tuple(np.arange(len(shape_str) - len(data.shape))))
+    #Append or create the dataset
     if name in MFMC[group].keys():
+        #If dataset already exists, append  
         size = list(MFMC[group][name].shape)
         # print('Current size', size)
         size[0] += data.shape[0]
@@ -273,7 +278,7 @@ def _fn_append_or_create_dataset(MFMC, group, name, data, spec):
         MFMC[group][name][-data.shape[0]:] = data
         pass
     else:
-        #Create with expandable dimension
+        #Otherwise, create new dataset with expandable dimension
         if name == h5_keys.MFMC_DATA or name == h5_keys.MFMC_DATA_IM:
             dtype = data.dtype #Special case for the actual data which will be stored in whatever form it comes in
         else:

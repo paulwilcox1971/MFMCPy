@@ -68,7 +68,7 @@ def fn_write(obj):
     for i in range(5):
         frame = {}
         frame[m.strs.h5_keys.MFMC_DATA] = np.random.randn(1, len(seq_write[m.strs.h5_keys.TRANSMIT_LAW]), 20) + 5 * i
-        frame[m.strs.h5_keys.PROBE_POSITION] = np.array([[[i / 10, 0.0, 0.0],[i / 10 + 3, 0.0, 0.0]]])
+        frame[m.strs.h5_keys.PROBE_POSITION] = np.array([[i / 10, 0.0, 0.0],[i / 10 + 3, 0.0, 0.0]])
         m.write.fn_add_frame(MFMC, list(obj.seq_dict_write.keys())[0], frame)
 
     m.write.fn_close_file(MFMC)
@@ -131,7 +131,7 @@ def fn_compare_read_write_data(obj):
         (success, err_msg) = m.utils.fn_compare_dicts(obj.law_dict_write[i], obj.law_dict_read[i], ignore_direction_for_keys_with_this_suffix = None)
         if err_msg:
             print(err_msg)
-    #Check seqeunces
+    #Check sequences
     for i in obj.seq_dict_write.keys():
         print('Checking ' + i)
         (success, err_msg) = m.utils.fn_compare_dicts(obj.seq_dict_write[i], obj.seq_dict_read[i], ignore_direction_for_keys_with_this_suffix = None)

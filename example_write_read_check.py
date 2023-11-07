@@ -73,7 +73,7 @@ seq_dict_write[m.write.fn_add_sequence(MFMC, seq_write)] = seq_write
 for i in range(5):
     frame = {}
     frame[m.strs.h5_keys.MFMC_DATA] = np.random.randn(1, len(seq_write[m.strs.h5_keys.TRANSMIT_LAW]), 100) + 5 * i
-    frame[m.strs.h5_keys.PROBE_POSITION] = np.array([[[i / 10, 0.0, 0.0],[i / 10 + 3, 0.0, 0.0]]])
+    frame[m.strs.h5_keys.PROBE_POSITION] = np.array([[i / 10, 0.0, 0.0],[i / 10 + 3, 0.0, 0.0]])
     m.write.fn_add_frame(MFMC, list(seq_dict_write.keys())[0], frame)
 
 m.write.fn_close_file(MFMC)

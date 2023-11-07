@@ -108,6 +108,12 @@ def fn_read_sequence_data(MFMC, group, spec = default_spec):
         print('Error: not a sequence')
         return []
     else:
+        #See how many frames there as this cannot be deduced from the sequence 
+        #data - this is not a field that is explicitly in the MFMC spec
+        if h5_keys.MFMC_DATA in MFMC[group].keys():
+            seq[h5_keys.NUMBER_OF_FRAMES] = MFMC[group][h5_keys.MFMC_DATA].shape[0]
+        else:
+            seq[h5_keys.NUMBER_OF_FRAMES] = 0
         return seq
 
 def fn_read_frame(MFMC, group, i = -1):
