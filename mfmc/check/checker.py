@@ -28,13 +28,28 @@ NUMPY_EQUIV_DTYPE = {
     'H5T_INTEGER': np.integer,
     'H5T_STD_REF_OBJ': np.dtype('O')}
 
-def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
+def fn_check_sequence(mfmc_seq, spec = default_spec):
+    """Check sequence in MFMC file against MFMC specification
+    
+    Args:
+        mfmc_seq (HDF5 group): an MFMC sequence group within an open MFMC file.
+        spec (dict): the MFMC specification against which the sequence content
+            is checked. default_spec is loaded from spreadsheet in /mfmc/spec.
+    Returns:
+        (tuple): tuple containing:
+            check_log (list): list of strings describing the outcome of each item 
+                tested
+            size_table (dict): sizes of datasets that matches the size
+                table in the MFMC specification
+            check_log (dict) list of strings describing each error in file. 
+                If empty, there are no errors
+    """
     check_log = []
     size_table = {}
     err_list = []
-    
+    MFMC = mfmc_seq.file
     #Check it is a sequence first
-    if 'TYPE' not in list(sequence_name.attrs) or utils.fn_str_to_utf(sequence_name.attrs[h5_keys.TYPE]) != h5_keys.SEQUENCE:
+    if 'TYPE' not in list(mfmc_seq.attrs) or utils.fn_str_to_utf(mfmc_seq.attrs[h5_keys.TYPE]) != h5_keys.SEQUENCE:
         err_list.append('Object is not MFMC sequence')
         return (check_log, size_table, err_list)
     
@@ -42,12 +57,12 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     sequence_specification = fn_get_relevant_part_of_spec(spec, h5_keys.SEQUENCE)
     #In special case of sequence without frames, remove relevant parts of spec
     #to avoid errors being raise
-    if h5_keys.MFMC_DATA not in sequence_name.keys():
-        #err_list.append(sequence_name.name + ' contains no frames')
+    if h5_keys.MFMC_DATA not in mfmc_seq.keys():
+        #err_list.append(mfmc_seq.name + ' contains no frames')
         sequence_specification = sequence_specification.drop(sequence_specification.index[[s in h5_keys.FRAME_KEYS for s in sequence_specification.index]])
     
     #return (check_log, size_table, err_list)
-    (check_log, size_table, err_list, objects_referenced_by_sequence) = fn_check_mfmc_group_against_specification(MFMC, spec, sequence_name, sequence_specification, check_log, size_table, err_list)
+    (check_log, size_table, err_list, objects_referenced_by_sequence) = _fn_check_mfmc_group_against_specification(MFMC, spec, mfmc_seq, sequence_specification, check_log, size_table, err_list)
 
     #Second, check all probe groups in sequence's probe list
     probe_list_from_sequence = objects_referenced_by_sequence[h5_keys.PROBE_LIST]
@@ -55,7 +70,7 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     #print(probe_list_from_sequence)
     #print(size_table)
     for probe in probe_list_from_sequence:
-        (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[probe], probe_spec, check_log, size_table, err_list)
+        (check_log, size_table, err_list, objects_referenced) = _fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[probe], probe_spec, check_log, size_table, err_list)
 
     #Third, check all law groups in sequence's transmit and receive laws, and 
     #log all the probes referenced by laws
@@ -63,7 +78,7 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
     probes_referenced_by_laws = []
     law_spec = fn_get_relevant_part_of_spec(spec, h5_keys.LAW)
     for law in law_list_from_sequence:
-        (check_log, size_table, err_list, objects_referenced) = fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[law], law_spec, check_log, size_table, err_list)
+        (check_log, size_table, err_list, objects_referenced) = _fn_check_mfmc_group_against_specification(MFMC, spec, MFMC[law], law_spec, check_log, size_table, err_list)
         probes_referenced_by_laws += objects_referenced[h5_keys.PROBE]
     probes_referenced_by_laws = list(set(probes_referenced_by_laws))
     
@@ -86,13 +101,13 @@ def fn_check_sequence(MFMC, sequence_name, spec = default_spec):
                 err_list.append('ELEMENT[' + str(i + 1) + '] in law ' + utils.fn_name_from_path(MFMC[law].name) + ': refers to elements outside range of probe ' + utils.fn_name_from_path(p))
     
     
-    return (check_log, size_table, err_list)
+    return check_log, size_table, err_list
 
 
 
     
 
-def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, check_log = [], size_table = {}, err_list = []):
+def _fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, check_log = [], size_table = {}, err_list = []):
     #This function works through spec and checks the data in mfmc_group against 
     #it for (0) its presence if mandatory, (1) its type, (2) its shape, and (3)
     #if HDF5 object reference that it points to correct type of mfmc_group
@@ -163,7 +178,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
             if utils.fn_str_to_utf(mfmc_group.attrs['TYPE']) in SPEC_TYPE_COUNTER.keys():
                 shape_str = shape_str.replace(SPEC_TYPE_COUNTER[utils.fn_str_to_utf(mfmc_group.attrs['TYPE'])], '<' + mfmc_group.name + '>')
             
-            (size_table, err_str) = fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table)
+            (size_table, err_str) = _fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table)
             if err_str:
                 check_string += err_str + SEPARATOR_STR
                 err_list.append(base_string + err_str)
@@ -187,7 +202,7 @@ def fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, chec
         check_log.append(check_string)
     return (check_log, size_table, err_list, objects_referenced)    
                 
-def fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table):
+def _fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table):
     shape_str = fn_parse_shape_string_in_spec(shape_str)
     #Special case of scalar values that still need to be compared to spec
     if not len(shape_tuple):

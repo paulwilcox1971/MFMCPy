@@ -74,7 +74,7 @@ for i in range(5):
     frame = {}
     frame[m.strs.h5_keys.MFMC_DATA] = np.random.randn(1, len(seq_write[m.strs.h5_keys.TRANSMIT_LAW]), 100) + 5 * i
     frame[m.strs.h5_keys.PROBE_POSITION] = np.array([[i / 10, 0.0, 0.0],[i / 10 + 3, 0.0, 0.0]])
-    m.write.fn_add_frame(MFMC, list(seq_dict_write.keys())[0], frame)
+    m.write.fn_add_frame(MFMC[list(seq_dict_write.keys())[0]], frame)
 
 m.write.fn_close_file(MFMC)
 
@@ -88,19 +88,19 @@ MFMC = m.read.fn_open_file_for_reading(fname)
 #Read in probes
 probe_dict_read = {}
 for p in m.read.fn_get_probe_list(MFMC):
-    probe_dict_read[p] = m.read.fn_read_probe(MFMC, p)
+    probe_dict_read[p] = m.read.fn_read_probe(MFMC[p])
 
 #Read in laws
 law_list = m.read.fn_get_law_list(MFMC)
 law_dict_read = {}
 for i in m.read.fn_get_law_list(MFMC):
-    law_dict_read[i] = m.read.fn_read_law(MFMC, i)
+    law_dict_read[i] = m.read.fn_read_law(MFMC[i])
 
 #Read in sequences
 seq_dict_read = {}
 for s in m.read.fn_get_sequence_list(MFMC):
-    seq_dict_read[s] = m.read.fn_read_sequence_data(MFMC, s)
-    seq_dict_read[s][m.strs.h5_keys.MFMC_DATA] = m.read.fn_read_frame(MFMC, s)
+    seq_dict_read[s] = m.read.fn_read_sequence_data(MFMC[s])
+    seq_dict_read[s][m.strs.h5_keys.MFMC_DATA] = m.read.fn_read_frame(MFMC[s])
 
 #Close file
 m.read.fn_close_file(MFMC)
@@ -119,7 +119,7 @@ suppress_law_details = True
 
 for s in sequence_list:
     print('SEQUENCE', s)
-    (check_log, size_table, err_list) = m.check.fn_check_sequence(MFMC, MFMC[s])
+    (check_log, size_table, err_list) = m.check.fn_check_sequence(MFMC[s])
     print('  SIZE TABLE')
     for k in size_table.keys():
         if not(k.startswith('N_C') and suppress_law_details):

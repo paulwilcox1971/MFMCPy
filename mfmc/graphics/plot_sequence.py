@@ -16,14 +16,14 @@ from ..strs import eng_keys
 
 def fn_plot_sequence(ax_outer, sequence):
 
-    seq = fn_read_sequence_data(sequence.parent, sequence.name) #It would be better to just make all the read write functions have just the group as the argument!!
+    seq = fn_read_sequence_data(sequence) #It would be better to just make all the read write functions have just the group as the argument!!
     
     #unique laws
     tx = seq[h5_keys.TRANSMIT_LAW]
     rx = seq[h5_keys.RECEIVE_LAW]
     tx_laws = np.unique(tx)
     rx_laws = np.unique(rx)
-    laws_full = {l: fn_read_law(sequence.parent, l) for l in np.unique(np.concatenate((tx_laws, rx_laws)))}
+    laws_full = {l: fn_read_law(sequence.file[l]) for l in np.unique(np.concatenate((tx_laws, rx_laws)))}
     
     sorted_laws, ti, ri, fmc_map = fn_get_fmc_map(tx, rx, tx_laws, rx_laws, laws_full)
 
@@ -42,7 +42,7 @@ def fn_plot_sequence(ax_outer, sequence):
     
     fi = seq[h5_keys.NUMBER_OF_FRAMES] - 1
     
-    data = fn_read_frame(sequence.parent, sequence.name, fi)
+    data = fn_read_frame(sequence, fi)
     
     max_vals = np.zeros(fmc_map.shape)
     max_vals[ti, ri] = np.max(np.abs(data), axis = 1)

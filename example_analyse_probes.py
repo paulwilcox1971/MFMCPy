@@ -29,7 +29,7 @@ for fname in fnames:
     probe_list = m.check.fn_get_probe_list(MFMC)
     for p in probe_list:
         print('  PROBE: ' + p)
-        probe_dict[p] = m.read.fn_read_probe(MFMC, p)
+        probe_dict[p] = m.read.fn_read_probe(MFMC[p])
         for t in probe_test_functions:
             details = t(probe_dict[p])
             if details['Match (%)'] > 90: #only print the ones if match is better than 90%

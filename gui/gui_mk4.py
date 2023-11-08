@@ -111,15 +111,15 @@ class cl_mfmc_explorer:
         obj = None
         plot_fn = None
         if obj_type == m.strs.h5_keys.PROBE:
-            obj = m.read.fn_read_probe(self.MFMC, obj_name)
+            obj = m.read.fn_read_probe(self.MFMC[obj_name])
             plot_fn = self.fn_plot_probe
             #self.fn_plot_probe(self.MFMC[obj_name])
         if obj_type == m.strs.h5_keys.SEQUENCE:
-            obj = m.read.fn_read_sequence_data(self.MFMC, obj_name)
+            obj = m.read.fn_read_sequence_data(self.MFMC[obj_name])
             plot_fn = self.fn_plot_sequence
             #self.fn_plot_sequence(self.MFMC[obj_name])
         if obj_type == m.strs.h5_keys.LAW:
-            obj = m.read.fn_read_law(self.MFMC, obj_name)
+            obj = m.read.fn_read_law(self.MFMC[obj_name])
         #Add text
         if obj:
             if obj_key:
@@ -173,21 +173,21 @@ class cl_mfmc_explorer:
         self.tree.insert('', 'end', text='Sequences in file', open = True, iid = tp, tags = [tp, '', ''])
         for i in m.read.fn_get_sequence_list(self.MFMC):
             j = self.tree.insert(tp, 'end', text = i, tags = [tp, i, ''])
-            self.fn_expand_item(m.read.fn_read_sequence_data(self.MFMC, i), j, i, tp)
+            self.fn_expand_item(m.read.fn_read_sequence_data(self.MFMC[i]), j, i, tp)
         
         #Probes
         tp = m.strs.h5_keys.PROBE
         self.tree.insert('', 'end', text='Probes in file', open = True, iid = tp, tags = [tp, '', ''])
         for i in m.read.fn_get_probe_list(self.MFMC):
             j = self.tree.insert(tp, 'end', text = i, tags = [tp, i, ''])
-            self.fn_expand_item(m.read.fn_read_probe(self.MFMC, i), j, i, tp)
+            self.fn_expand_item(m.read.fn_read_probe(self.MFMC[i]), j, i, tp)
         
         #Read in laws
         tp = m.strs.h5_keys.LAW
         self.tree.insert('', 'end', text='Focal laws in file', open = True, iid = tp, tags = [tp, '', ''])
         for i in m.read.fn_get_law_list(self.MFMC):
             j = self.tree.insert(tp, 'end', text = i, tags = [tp, i, ''])
-            self.fn_expand_item(m.read.fn_read_law(self.MFMC, i), j, i, tp)
+            self.fn_expand_item(m.read.fn_read_law(self.MFMC[i]), j, i, tp)
         
         return
    
@@ -209,7 +209,7 @@ class cl_mfmc_explorer:
     def fn_check(self):
         obj_type, obj, obj_field = self.fn_get_current_tree_item()
         if obj_type == m.strs.h5_keys.SEQUENCE:
-            (check_log, size_table, err_list) = m.check.fn_check_sequence(self.MFMC, self.MFMC[obj])
+            (check_log, size_table, err_list) = m.check.fn_check_sequence(self.MFMC[obj])
             self.tab_check_content.delete("1.0", tk.END)
 
             self.tab_check_content.insert(tk.END, '\nERRORS\n', ('error', 'bold'))
