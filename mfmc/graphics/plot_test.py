@@ -35,8 +35,8 @@ for p in m.read.fn_get_probe_list(MFMC):
     
 probe = probe_dict['/PROBE<1>']
 
-fig, ax = plt.subplots()
-check1 = fn_plot_probe(ax, probe)
+# fig, ax = plt.subplots()
+# check1 = fn_plot_probe(ax, probe)
 
 seq = MFMC['/SEQUENCE<1>']
 fig, ax = plt.subplots()

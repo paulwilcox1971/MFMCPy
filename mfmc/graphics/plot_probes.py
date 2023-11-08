@@ -10,6 +10,7 @@ import numpy as np
 from matplotlib.patches import Rectangle, Ellipse, Wedge
 from matplotlib.collections import PatchCollection
 from matplotlib.widgets import Button, CheckButtons
+import matplotlib.pyplot as plt
 
 from ..strs import h5_keys
 from ..strs import eng_keys
@@ -94,16 +95,17 @@ def fn_plot_probe(ax_outer, probe):
     
     
     check = CheckButtons(
-        ax=rax,
+        ax = rax,
         labels = lines_by_label.keys(),
         actives=[l[0].get_visible() for l in lines_by_label.values()]
-        ) #'Elements', 'Centres', 'Major axes', 'Minor axes'])
+        ) 
     
     def fn_callback(label):
         ln = lines_by_label[label]
         for l in ln:
             l.set_visible(not l.get_visible())
             l.figure.canvas.draw_idle()
+        plt.draw()
     
     check.on_clicked(fn_callback)
 
