@@ -31,7 +31,7 @@ MFMC = m.read.fn_open_file_for_reading(fname)
 
 probe_dict = {}
 for p in m.read.fn_get_probe_list(MFMC):
-    probe_dict[p] = m.read.fn_read_probe(MFMC, p)
+    probe_dict[p] = m.read.fn_read_probe(MFMC[p])
     
 probe = probe_dict['/PROBE<1>']
 
