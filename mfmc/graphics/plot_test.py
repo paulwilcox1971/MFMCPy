@@ -39,6 +39,9 @@ probe = probe_dict['/PROBE<1>']
 # check1 = fn_plot_probe(ax, probe)
 
 seq = MFMC['/SEQUENCE<1>']
+
+seq_data = m.read.fn_read_sequence_data(seq)
+
 fig, ax = plt.subplots()
 check2 = fn_plot_sequence(ax, seq)
 
