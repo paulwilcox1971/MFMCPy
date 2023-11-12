@@ -16,10 +16,16 @@ from ..read import fn_read_sequence_data, fn_read_frame, fn_read_law
 from ..strs import h5_keys
 from ..strs import eng_keys
 
+edge_fract = 0.02
+selected_tx = 0
+selected_rx = 0
 
-def fn_plot_sequence(ax_outer, mfmc_sequence_group):
+def fn_plot_sequence(fig, mfmc_sequence_group):
     #Function should accept either HDF5 object or seq_data dict (latter shoudl contain at least one frame)
-
+    
+#    fig = ax.get_figure()
+    fig.clf()
+    
     seq_data = fn_read_sequence_data(mfmc_sequence_group) 
     
     #unique laws, utx and urx, in order they appear in data for tx and rx
@@ -28,18 +34,22 @@ def fn_plot_sequence(ax_outer, mfmc_sequence_group):
     unique_rx_laws, rx_law_dict, rx_law_indices = fn_analyse_laws(seq_data['RECEIVE_LAW'])
     
     
-    ax_outer.clear()
-    ax_outer.set_axis_off()
+    #ax_outer.clear()
+    #ax_outer.set_axis_off()
     
-    ax_map = ax_outer.inset_axes([0.0, 0.0, 0.2, 0.2])
-    #ax_map.set_axis_off()
+    #ax_map = ax_outer.inset_axes([0.0, 0.0, 0.2, 0.2], zorder = 6)
+    ax_map = fig.add_axes([edge_fract, edge_fract, 0.2 - 2 * edge_fract, 0.2 - 2 * edge_fract])
+    ax_map.set_axis_off()
 
-    ax_bscan = ax_outer.inset_axes([0.2, 0.2, 0.8, 0.8])
+    #ax_bscan = ax_outer.inset_axes([0.2, 0.2, 0.8, 0.8])
+    ax_bscan = fig.add_axes([0.2 + edge_fract, 0.2 + edge_fract, 0.8 - 2 * edge_fract, 0.8 - 2 * edge_fract])
     ax_bscan.set_axis_off()
     
-    ax_ascan = ax_outer.inset_axes([0.2, 0.0, 0.8, 0.2])
+    #ax_ascan = ax_outer.inset_axes([0.2, 0.0, 0.8, 0.2])
+    ax_ascan = fig.add_axes([0.2 + edge_fract, edge_fract, 0.8 - 2 * edge_fract, 0.2 - 2 * edge_fract])
     
-    ax_ctrl = ax_outer.inset_axes([0.0, 0.2, 0.2, 0.8])
+    #ax_ctrl = ax_outer.inset_axes([0.0, 0.2, 0.2, 0.8])
+    ax_ctrl = fig.add_axes([0.0 +edge_fract, 0.2 + edge_fract, 0.2 - 2 * edge_fract, 0.8 - 2 * edge_fract])
     ax_ctrl.set_axis_off()
 
     
@@ -66,31 +76,35 @@ def fn_plot_sequence(ax_outer, mfmc_sequence_group):
     def fn_callback(label):
         fn_refresh()
         
+    def mouse_event(ev):
+        global selected_tx, selected_rx    
+        if ev.inaxes == ax_map:
+            selected_tx = int(np.round(ev.xdata))
+            selected_rx = int(np.round(ev.ydata))
+            print(selected_tx, selected_rx)
+            fn_refresh()
+
     def fn_refresh():
         show_what = check.value_selected
-        print(show_what)
+        print(selected_tx, selected_rx)
         if show_what == 'Tx gather':
-            i = np.asarray(tx_law_indices == 5).nonzero()[0]
+            i = np.asarray(tx_law_indices == selected_tx).nonzero()[0]
             # i = i[np.argsort(ri[i])]
             # print(ri[i])
         if show_what == 'Rx gather':
-            i = np.asarray(rx_law_indices == 3).nonzero()[0]
+            i = np.asarray(rx_law_indices == selected_rx).nonzero()[0]
             # i = i[np.argsort(ti[i])]
             # print(ti[i])
         if show_what == 'Diag':
-            i = np.asarray(tx_law_indices == rx_law_indices).nonzero()[0]
+            i = np.asarray(tx_law_indices - rx_law_indices == selected_tx - selected_rx).nonzero()[0]
         ax_bscan.imshow(np.real(data[i,:]), extent = [np.min(time) * 1e6, np.max(time) * 1e6, 1, len(ascan_label)], aspect = 'auto')
-        ax_bscan.set_title('Raw data')
         ax_bscan.set_xlabel('Time ($\mu$s)')
         ax_bscan.set_ylabel('Ascan')
-        plt.draw()
+        fig.canvas.draw_idle()
+        #plt.draw()
     
     
-    def mouse_event(x):
-        print(x)
 
-    cc = AxesWidget(ax_map)
-    cc.connect_event("button_press_event", mouse_event)
     
     
     # cid = ax_map.canvas.mpl_connect('button_press_event', mouse_event)
@@ -117,9 +131,11 @@ def fn_plot_sequence(ax_outer, mfmc_sequence_group):
     
     fn_refresh()
     check.on_clicked(fn_callback)
+    cc = AxesWidget(ax_map)
+    cc.connect_event("button_press_event", mouse_event)
     
     
-    return check
+    return check, cc
 
 def fn_analyse_laws(focal_laws_for_seq):
     unique_laws, i =  np.unique(focal_laws_for_seq, return_index = True)

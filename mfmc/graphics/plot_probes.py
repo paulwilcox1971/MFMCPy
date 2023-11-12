@@ -15,7 +15,11 @@ import matplotlib.pyplot as plt
 from ..strs import h5_keys
 from ..strs import eng_keys
 
-def fn_plot_probe(ax_outer, probe):
+def fn_plot_probe(fig, probe):
+    
+    #fig = ax.get_figure()
+    fig.clf()
+    
     x, y, z = np.array(probe[h5_keys.ELEMENT_POSITION]).T
     e1x, e1y, e1z = np.array(probe[h5_keys.ELEMENT_MAJOR]).T
     e2x, e2y, e2z = np.array(probe[h5_keys.ELEMENT_MINOR]).T
@@ -25,15 +29,11 @@ def fn_plot_probe(ax_outer, probe):
     w2 = np.sqrt(e2x ** 2 + e2y ** 2 )
     theta = np.arctan2(e1y, e1x)
     
-    ax_outer.clear()
-    ax_outer.set_axis_off()
-    
-    rax = ax_outer.inset_axes([0.0, 0.0, 0.2, 1.0])
+    rax = fig.add_axes([0.0, 0.0, 0.2, 1.0])
     rax.set_axis_off()
 
-    ax = ax_outer.inset_axes([0.2, 0.0, 0.8, 1.0])
+    ax = fig.add_axes([0.2, 0.0, 0.8, 1.0], aspect = 'equal')
     ax.set_axis_off()
-    ax.axis('equal')
     
 
         
@@ -105,7 +105,7 @@ def fn_plot_probe(ax_outer, probe):
         for l in ln:
             l.set_visible(not l.get_visible())
             l.figure.canvas.draw_idle()
-        plt.draw()
+        fig.canvas.draw_idle()
     
     check.on_clicked(fn_callback)
 

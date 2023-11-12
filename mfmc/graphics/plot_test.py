@@ -35,13 +35,14 @@ for p in m.read.fn_get_probe_list(MFMC):
     
 probe = probe_dict['/PROBE<1>']
 
-# fig, ax = plt.subplots()
-# check1 = fn_plot_probe(ax, probe)
+fig, ax = plt.subplots()
+check1 = fn_plot_probe(fig, probe)
 
 seq = MFMC['/SEQUENCE<1>']
 
 seq_data = m.read.fn_read_sequence_data(seq)
 
 fig, ax = plt.subplots()
-check2 = fn_plot_sequence(ax, seq)
+#fig = plt.figure()
+check2 = fn_plot_sequence(fig, seq)
 

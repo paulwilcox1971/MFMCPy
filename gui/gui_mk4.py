@@ -145,11 +145,11 @@ class cl_mfmc_explorer:
         return obj_type, obj_name, obj_key
     
     def fn_plot_probe(self, p): 
-        self.probe_checkboxes = m.graphics.fn_plot_probe(self.ax, p)
+        self.probe_checkboxes = m.graphics.fn_plot_probe(self.fig, p)
         self.canvas.draw()
 
     def fn_plot_sequence(self, s):
-        self.sequence_checkboxes = m.graphics.fn_plot_sequence(self.ax, s)
+        self.sequence_checkboxes = m.graphics.fn_plot_sequence(self.fig, s)
         self.canvas.draw()
         
 
