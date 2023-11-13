@@ -16,26 +16,25 @@ from ..read import fn_read_sequence_data, fn_read_frame, fn_read_law
 from ..strs import h5_keys
 from ..strs import eng_keys
 
-edge_fract = 0.02
-selected_tx = 0
-selected_rx = 0
+#edge_fract = 0.02
+#map_lines = 0
+#show_what = 0
 
 def fn_plot_sequence(fig, mfmc_sequence_group):
     #Function should accept either HDF5 object or seq_data dict (latter shoudl contain at least one frame)
     
-#    fig = ax.get_figure()
-    fig.clf()
+    for a in fig.axes:
+        fig.delaxes(a)
     
     seq_data = fn_read_sequence_data(mfmc_sequence_group) 
+    selected_tx = 0
+    selected_rx = 0
+    edge_fract = 0.02
     
     #unique laws, utx and urx, in order they appear in data for tx and rx
-    
     unique_tx_laws, tx_law_dict, tx_law_indices = fn_analyse_laws(seq_data['TRANSMIT_LAW'])
     unique_rx_laws, rx_law_dict, rx_law_indices = fn_analyse_laws(seq_data['RECEIVE_LAW'])
     
-    
-    #ax_outer.clear()
-    #ax_outer.set_axis_off()
     
     #ax_map = ax_outer.inset_axes([0.0, 0.0, 0.2, 0.2], zorder = 6)
     ax_map = fig.add_axes([edge_fract, edge_fract, 0.2 - 2 * edge_fract, 0.2 - 2 * edge_fract])
@@ -56,6 +55,7 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     fi = seq_data[h5_keys.NUMBER_OF_FRAMES] - 1
     
     data = fn_read_frame(mfmc_sequence_group, fi)
+    global_max = np.max(np.abs(data))
     
     max_vals = np.zeros((len(unique_tx_laws), len(unique_rx_laws)))
     max_vals[tx_law_indices, rx_law_indices] = np.max(np.abs(data), axis = 1)
@@ -63,30 +63,52 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     time = seq_data[h5_keys.START_TIME] + np.arange(data.shape[1]) * seq_data[h5_keys.TIME_STEP]
     ascan_label = np.arange(data.shape[0])
 
-    ax_map.imshow(max_vals, extent = [0, len(unique_tx_laws), len(unique_rx_laws), 0])
-    ax_map.set_ylim([min(tx_law_indices), max(tx_law_indices)])
-    ax_map.set_xlim([min(rx_law_indices), max(rx_law_indices)])
-    
-    check = RadioButtons(
-        ax = ax_ctrl,
-        labels = ['Tx gather', 'Rx gather', 'Diag'],
-        active = 0
-        )
+    ax_map.imshow(max_vals)
+    map_lines = ax_map.plot([[0,0], [0,0]], [[1,1], [1,1]], visible = False)    
+    map_lines[0].set(color = 'y', linestyle = ':')
+    map_lines[1].set(color = 'r', linestyle = '-')    
     
     def fn_callback(label):
-        fn_refresh()
+        fn_refresh_bscan()
+        fn_refresh_map_lines()
         
-    def mouse_event(ev):
-        global selected_tx, selected_rx    
+    def fn_mouse_click_map(ev):
+        nonlocal selected_tx, selected_rx    
         if ev.inaxes == ax_map:
             selected_tx = int(np.round(ev.xdata))
             selected_rx = int(np.round(ev.ydata))
-            print(selected_tx, selected_rx)
-            fn_refresh()
+            #print(selected_tx, selected_rx)
+            fn_refresh_map_lines()
+            fn_refresh_bscan()
+            
+    def fn_mouse_move_map(ev):
+        if ev.inaxes == ax_map:
+            xd, yd = fn_get_map_lines(np.round(ev.xdata), np.round(ev.ydata))
+            map_lines[0].set(xdata = xd, ydata = yd, visible = True)
+        else:
+            map_lines[0].set(visible = False)
+        fig.canvas.draw_idle()
+            
+    def fn_refresh_map_lines():
+        xd, yd = fn_get_map_lines(selected_tx, selected_rx)
+        map_lines[1].set(xdata = xd, ydata = yd, visible = True)
+        fig.canvas.draw_idle()
 
-    def fn_refresh():
+    def fn_get_map_lines(t, r):
+        if show_what == 'Tx gather':
+            xd = [t, t]
+            yd = [min(rx_law_indices) - 0.5, max(rx_law_indices) + 0.5]
+        if show_what == 'Rx gather':
+            xd = [min(tx_law_indices) - 0.5, max(tx_law_indices) + 0.5]
+            yd = [r, r]
+        if show_what == 'Diag':
+            xd = [-max(tx_law_indices) + t, max(tx_law_indices) + t]
+            yd = [-max(rx_law_indices) + r, max(rx_law_indices) + r]
+        return xd, yd
+
+    def fn_refresh_bscan():
+        global show_what
         show_what = check.value_selected
-        print(selected_tx, selected_rx)
         if show_what == 'Tx gather':
             i = np.asarray(tx_law_indices == selected_tx).nonzero()[0]
             # i = i[np.argsort(ri[i])]
@@ -97,45 +119,26 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
             # print(ti[i])
         if show_what == 'Diag':
             i = np.asarray(tx_law_indices - rx_law_indices == selected_tx - selected_rx).nonzero()[0]
-        ax_bscan.imshow(np.real(data[i,:]), extent = [np.min(time) * 1e6, np.max(time) * 1e6, 1, len(ascan_label)], aspect = 'auto')
+        ax_bscan.imshow(np.real(data[i,:]), extent = [np.min(time) * 1e6, np.max(time) * 1e6, 1, len(ascan_label)], aspect = 'auto', vmin = -global_max, vmax = global_max)
         ax_bscan.set_xlabel('Time ($\mu$s)')
         ax_bscan.set_ylabel('Ascan')
         fig.canvas.draw_idle()
-        #plt.draw()
     
-    
-
-    
-    
-    # cid = ax_map.canvas.mpl_connect('button_press_event', mouse_event)
-    
-    # def on_move(event):
-    #     if event.inaxes:
-    #         print(event.inaxes)
-    #         print(f'data coords {event.xdata} {event.ydata},',
-    #               f'pixel coords {event.x} {event.y}')
-
-
-    # def on_click(event):
-    #     if event.button is MouseButton.LEFT:
-    #         print('disconnecting callback')
-    #         plt.disconnect(binding_id)
-
-
-    # binding_id = plt.connect('motion_notify_event', on_move)
-    # plt.connect('button_press_event', on_click)
-
-    
-    
-    
-    
-    fn_refresh()
+    #controls
+    check = RadioButtons(
+        ax = ax_ctrl,
+        labels = ['Tx gather', 'Rx gather', 'Diag'],
+        active = 0
+        )
     check.on_clicked(fn_callback)
-    cc = AxesWidget(ax_map)
-    cc.connect_event("button_press_event", mouse_event)
+
+    map_widget = AxesWidget(ax_map)
+    map_widget.connect_event("button_press_event", fn_mouse_click_map)
+    map_widget.connect_event('motion_notify_event', fn_mouse_move_map)
     
-    
-    return check, cc
+    fn_refresh_bscan()
+    fn_refresh_map_lines()
+    return check, map_widget
 
 def fn_analyse_laws(focal_laws_for_seq):
     unique_laws, i =  np.unique(focal_laws_for_seq, return_index = True)
@@ -149,4 +152,5 @@ def fn_analyse_laws(focal_laws_for_seq):
 
 
     
+
 

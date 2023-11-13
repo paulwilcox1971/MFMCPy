@@ -101,7 +101,7 @@ class cl_mfmc_explorer:
         
         #add the figure to the graphic tab
         self.fig = Figure()
-        self.ax = self.fig.add_subplot(111)
+        #self.ax = self.fig.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.fig,  master = self.tab_graphic)
         self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
 

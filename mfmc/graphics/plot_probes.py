@@ -17,8 +17,8 @@ from ..strs import eng_keys
 
 def fn_plot_probe(fig, probe):
     
-    #fig = ax.get_figure()
-    fig.clf()
+    for a in fig.axes:
+        fig.delaxes(a)
     
     x, y, z = np.array(probe[h5_keys.ELEMENT_POSITION]).T
     e1x, e1y, e1z = np.array(probe[h5_keys.ELEMENT_MAJOR]).T
