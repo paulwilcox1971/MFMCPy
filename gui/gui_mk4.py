@@ -100,10 +100,10 @@ class cl_mfmc_explorer:
         self.tab_check_content.tag_configure('bold', relief='raised')
         
         #add the figure to the graphic tab
-        self.fig = Figure()
-        #self.ax = self.fig.add_subplot(111)
-        self.canvas = FigureCanvasTkAgg(self.fig,  master = self.tab_graphic)
-        self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        self.probe_fig = Figure()
+        self.sequence_fig = Figure()
+        # self.canvas = FigureCanvasTkAgg(self.probe_fig,  master = self.tab_graphic)
+        # self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
 
             
     def fn_show_detail(self, obj_type, obj_name, obj_key):
@@ -145,11 +145,15 @@ class cl_mfmc_explorer:
         return obj_type, obj_name, obj_key
     
     def fn_plot_probe(self, p): 
-        self.probe_checkboxes = m.graphics.fn_plot_probe(self.fig, p)
+        self.canvas = FigureCanvasTkAgg(self.probe_fig,  master = self.tab_graphic)
+        self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        self.probe_checkboxes = m.graphics.fn_plot_probe(self.probe_fig, p)
         self.canvas.draw()
 
     def fn_plot_sequence(self, s):
-        self.sequence_checkboxes = m.graphics.fn_plot_sequence(self.fig, s)
+        self.canvas = FigureCanvasTkAgg(self.sequence_fig,  master = self.tab_graphic)
+        self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        self.sequence_checkboxes = m.graphics.fn_plot_sequence(self.sequence_fig, s)
         self.canvas.draw()
         
 

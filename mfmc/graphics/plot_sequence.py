@@ -23,34 +23,33 @@ from ..strs import eng_keys
 def fn_plot_sequence(fig, mfmc_sequence_group):
     #Function should accept either HDF5 object or seq_data dict (latter shoudl contain at least one frame)
     
+    #clear all the current axes
     for a in fig.axes:
         fig.delaxes(a)
     
     seq_data = fn_read_sequence_data(mfmc_sequence_group) 
+
     selected_tx = 0
     selected_rx = 0
+    show_what = 0
+    
+    #set up figure    
     edge_fract = 0.02
-    
-    #unique laws, utx and urx, in order they appear in data for tx and rx
-    unique_tx_laws, tx_law_dict, tx_law_indices = fn_analyse_laws(seq_data['TRANSMIT_LAW'])
-    unique_rx_laws, rx_law_dict, rx_law_indices = fn_analyse_laws(seq_data['RECEIVE_LAW'])
-    
-    
-    #ax_map = ax_outer.inset_axes([0.0, 0.0, 0.2, 0.2], zorder = 6)
     ax_map = fig.add_axes([edge_fract, edge_fract, 0.2 - 2 * edge_fract, 0.2 - 2 * edge_fract])
     ax_map.set_axis_off()
 
-    #ax_bscan = ax_outer.inset_axes([0.2, 0.2, 0.8, 0.8])
     ax_bscan = fig.add_axes([0.2 + edge_fract, 0.2 + edge_fract, 0.8 - 2 * edge_fract, 0.8 - 2 * edge_fract])
-    ax_bscan.set_axis_off()
+#    ax_bscan.set_axis_off()
     
-    #ax_ascan = ax_outer.inset_axes([0.2, 0.0, 0.8, 0.2])
     ax_ascan = fig.add_axes([0.2 + edge_fract, edge_fract, 0.8 - 2 * edge_fract, 0.2 - 2 * edge_fract])
+    ax_ascan.set_axis_off()
     
-    #ax_ctrl = ax_outer.inset_axes([0.0, 0.2, 0.2, 0.8])
     ax_ctrl = fig.add_axes([0.0 +edge_fract, 0.2 + edge_fract, 0.2 - 2 * edge_fract, 0.8 - 2 * edge_fract])
     ax_ctrl.set_axis_off()
 
+    #unique laws, utx and urx, in order they appear in data for tx and rx
+    unique_tx_laws, tx_law_dict, tx_law_indices = fn_analyse_laws(seq_data['TRANSMIT_LAW'])
+    unique_rx_laws, rx_law_dict, rx_law_indices = fn_analyse_laws(seq_data['RECEIVE_LAW'])
     
     fi = seq_data[h5_keys.NUMBER_OF_FRAMES] - 1
     
@@ -67,11 +66,30 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     map_lines = ax_map.plot([[0,0], [0,0]], [[1,1], [1,1]], visible = False)    
     map_lines[0].set(color = 'y', linestyle = ':')
     map_lines[1].set(color = 'r', linestyle = '-')    
+
+    im = ax_bscan.imshow(np.ones([3,3]), aspect = 'auto', vmin = -global_max, vmax = global_max)
+    bscan_lines = ax_map.plot([[0,0], [0,0]], [[1,1], [1,1]], visible = False)    
+    bscan_lines[0].set(color = 'y', linestyle = ':')
+    bscan_lines[1].set(color = 'r', linestyle = '-')    
+
     
-    def fn_callback(label):
+    def fn_checkbox_callback(label):
         fn_refresh_bscan()
         fn_refresh_map_lines()
         
+    def fn_mouse_click_bscan(ev):
+        pass
+
+    def fn_mouse_move_bscan(ev):
+        if ev.inaxes == ax_bscan:
+            xd = np.array([min(time), max(time)]) * 1e6
+            yd = np.array([1,1]) * np.round(ev.ydata)
+            print(xd, yd)
+            bscan_lines[0].set(xdata = xd, ydata = yd, visible = True)
+        else:
+            bscan_lines[0].set(visible = False)
+        fig.canvas.draw_idle()
+
     def fn_mouse_click_map(ev):
         nonlocal selected_tx, selected_rx    
         if ev.inaxes == ax_map:
@@ -95,6 +113,7 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
         fig.canvas.draw_idle()
 
     def fn_get_map_lines(t, r):
+        nonlocal show_what
         if show_what == 'Tx gather':
             xd = [t, t]
             yd = [min(rx_law_indices) - 0.5, max(rx_law_indices) + 0.5]
@@ -105,21 +124,18 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
             xd = [-max(tx_law_indices) + t, max(tx_law_indices) + t]
             yd = [-max(rx_law_indices) + r, max(rx_law_indices) + r]
         return xd, yd
-
+    
     def fn_refresh_bscan():
-        global show_what
+        nonlocal show_what
         show_what = check.value_selected
         if show_what == 'Tx gather':
             i = np.asarray(tx_law_indices == selected_tx).nonzero()[0]
-            # i = i[np.argsort(ri[i])]
-            # print(ri[i])
         if show_what == 'Rx gather':
             i = np.asarray(rx_law_indices == selected_rx).nonzero()[0]
-            # i = i[np.argsort(ti[i])]
-            # print(ti[i])
         if show_what == 'Diag':
             i = np.asarray(tx_law_indices - rx_law_indices == selected_tx - selected_rx).nonzero()[0]
-        ax_bscan.imshow(np.real(data[i,:]), extent = [np.min(time) * 1e6, np.max(time) * 1e6, 1, len(ascan_label)], aspect = 'auto', vmin = -global_max, vmax = global_max)
+        im.set_data(np.real(data[i,:]))
+        im.set(extent = [np.min(time) * 1e6, np.max(time) * 1e6, 1, len(ascan_label)])
         ax_bscan.set_xlabel('Time ($\mu$s)')
         ax_bscan.set_ylabel('Ascan')
         fig.canvas.draw_idle()
@@ -130,11 +146,17 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
         labels = ['Tx gather', 'Rx gather', 'Diag'],
         active = 0
         )
-    check.on_clicked(fn_callback)
+    check.on_clicked(fn_checkbox_callback)
 
     map_widget = AxesWidget(ax_map)
     map_widget.connect_event("button_press_event", fn_mouse_click_map)
     map_widget.connect_event('motion_notify_event', fn_mouse_move_map)
+
+    bscan_widget = AxesWidget(ax_bscan)
+    bscan_widget.connect_event("button_press_event", fn_mouse_click_bscan)
+    bscan_widget.connect_event('motion_notify_event', fn_mouse_move_bscan)
+
+
     
     fn_refresh_bscan()
     fn_refresh_map_lines()

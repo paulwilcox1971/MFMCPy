@@ -14,7 +14,7 @@ dir_path = os.path.dirname(path)
 os.chdir(os.sep.join(dir_path.split(os.sep)[0:-2]))
 
 import mfmc as m
-from mfmc.graphics.plot_probes import fn_plot_probe
+from mfmc.graphics.plot_probe import fn_plot_probe
 from mfmc.graphics.plot_sequence import fn_plot_sequence
 
 
