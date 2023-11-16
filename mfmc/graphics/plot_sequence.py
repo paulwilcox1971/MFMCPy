@@ -9,6 +9,7 @@ Created on Wed May 10 23:39:24 2023
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, RadioButtons, AxesWidget
 from matplotlib.backend_bases import MouseButton
+from matplotlib.colors import Normalize
 
 import numpy as np
 from ..read import fn_read_sequence_data, fn_read_frame, fn_read_law
@@ -29,9 +30,12 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     selected_tx = 0
     selected_rx = 0
     show_what = 0
+    selected_ascan = 0
+    selected_time = 0
+    bscan_indices = 0
     
     #set up figure    
-    edge_fract = 0.02
+    edge_fract = 0.05
     ax_map = fig.add_axes([edge_fract, edge_fract, 0.2 - 2 * edge_fract, 0.2 - 2 * edge_fract])
     ax_map.set_axis_off()
 
@@ -39,7 +43,7 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
 #    ax_bscan.set_axis_off()
     
     ax_ascan = fig.add_axes([0.2 + edge_fract, edge_fract, 0.8 - 2 * edge_fract, 0.2 - 2 * edge_fract])
-    ax_ascan.set_axis_off()
+#    ax_ascan.set_axis_off()
     
     ax_ctrl = fig.add_axes([0.0 +edge_fract, 0.2 + edge_fract, 0.2 - 2 * edge_fract, 0.8 - 2 * edge_fract])
     ax_ctrl.set_axis_off()
@@ -59,15 +63,17 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     time = seq_data[h5_keys.START_TIME] + np.arange(data.shape[1]) * seq_data[h5_keys.TIME_STEP]
     ascan_label = np.arange(data.shape[0])
 
-    ax_map.imshow(max_vals)
+    ax_map.imshow(max_vals, interpolation = 'none')
     map_lines = ax_map.plot([[0,0], [0,0]], [[1,1], [1,1]], visible = False)    
     map_lines[0].set(color = 'y', linestyle = ':')
     map_lines[1].set(color = 'r', linestyle = '-')    
 
-    im = ax_bscan.imshow(np.ones([3,3]), aspect = 'auto', vmin = -global_max, vmax = global_max)
-    bscan_lines = ax_map.plot([[0,0], [0,0]], [[1,1], [1,1]], visible = False)    
+    im = ax_bscan.imshow(np.ones([3,3]), aspect = 'auto', norm = Normalize(vmin = -global_max, vmax = global_max), interpolation = 'none')
+    bscan_lines = ax_bscan.plot([[0,0], [0,0]], [[1,1], [1,1]], visible = False)    
     bscan_lines[0].set(color = 'y', linestyle = ':')
-    bscan_lines[1].set(color = 'r', linestyle = '-')    
+    bscan_lines[1].set(color = 'r', linestyle = '-')
+    
+    ascan_lines = ax_ascan.plot([0,1], [0,1], visible = True, color = 'r')
 
     
     def fn_checkbox_callback(label):
@@ -75,13 +81,26 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
         fn_refresh_map_lines()
         
     def fn_mouse_click_bscan(ev):
-        pass
+        nonlocal selected_ascan, selected_time
+        if ev.inaxes == ax_bscan:
+            selected_ascan = int(np.round(ev.ydata))
+            fn_refresh_ascan()
+            
+    def fn_refresh_ascan():
+        xd = np.array([time[0], time[-1]]) * 1e6
+        yd = np.array([1,1]) * selected_ascan
+        bscan_lines[1].set(xdata = xd, ydata = yd, visible = True)
+        ascan_lines[0].set(xdata = time  *1e6, ydata = np.real(data[bscan_indices[selected_ascan - 1], :]), 
+                           visible = True)
+                           
+        ax_ascan.set_xlim(np.array([time[0], time[-1]]) * 1e6)
+        ax_ascan.set_ylim([-global_max, global_max])
+        fig.canvas.draw_idle()
 
     def fn_mouse_move_bscan(ev):
         if ev.inaxes == ax_bscan:
             xd = np.array([min(time), max(time)]) * 1e6
             yd = np.array([1,1]) * np.round(ev.ydata)
-#            print(xd, yd)
             bscan_lines[0].set(xdata = xd, ydata = yd, visible = True)
         else:
             bscan_lines[0].set(visible = False)
@@ -122,16 +141,16 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
         return xd, yd
     
     def fn_refresh_bscan():
-        nonlocal show_what
+        nonlocal show_what, bscan_indices
         show_what = check.value_selected
         if show_what == 'Tx gather':
-            i = np.asarray(tx_law_indices == selected_tx).nonzero()[0]
+            bscan_indices = np.asarray(tx_law_indices == selected_tx).nonzero()[0]
         if show_what == 'Rx gather':
-            i = np.asarray(rx_law_indices == selected_rx).nonzero()[0]
+            bscan_indices = np.asarray(rx_law_indices == selected_rx).nonzero()[0]
         if show_what == 'Diag':
-            i = np.asarray(tx_law_indices - rx_law_indices == selected_tx - selected_rx).nonzero()[0]
-        im.set_data(np.real(data[i,:]))
-        im.set(extent = [np.min(time) * 1e6, np.max(time) * 1e6, 1, len(ascan_label)])
+            bscan_indices = np.asarray(tx_law_indices - rx_law_indices == selected_tx - selected_rx).nonzero()[0]
+        im.set_data(np.real(data[bscan_indices,:]))
+        im.set(extent = [np.min(time) * 1e6, np.max(time) * 1e6, 0.5, len(bscan_indices) + 0.5])
         ax_bscan.set_xlabel('Time ($\mu$s)')
         ax_bscan.set_ylabel('Ascan')
         fig.canvas.draw_idle()
