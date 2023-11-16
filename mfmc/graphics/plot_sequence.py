@@ -16,9 +16,6 @@ from ..read import fn_read_sequence_data, fn_read_frame, fn_read_law
 from ..strs import h5_keys
 from ..strs import eng_keys
 
-#edge_fract = 0.02
-#map_lines = 0
-#show_what = 0
 
 def fn_plot_sequence(fig, mfmc_sequence_group):
     #Function should accept either HDF5 object or seq_data dict (latter shoudl contain at least one frame)
@@ -84,7 +81,7 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
         if ev.inaxes == ax_bscan:
             xd = np.array([min(time), max(time)]) * 1e6
             yd = np.array([1,1]) * np.round(ev.ydata)
-            print(xd, yd)
+#            print(xd, yd)
             bscan_lines[0].set(xdata = xd, ydata = yd, visible = True)
         else:
             bscan_lines[0].set(visible = False)
@@ -95,7 +92,6 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
         if ev.inaxes == ax_map:
             selected_tx = int(np.round(ev.xdata))
             selected_rx = int(np.round(ev.ydata))
-            #print(selected_tx, selected_rx)
             fn_refresh_map_lines()
             fn_refresh_bscan()
             
