@@ -102,8 +102,9 @@ class cl_mfmc_explorer:
         #add the figure to the graphic tab
         self.probe_fig = Figure()
         self.sequence_fig = Figure()
-        # self.canvas = FigureCanvasTkAgg(self.probe_fig,  master = self.tab_graphic)
-        # self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        
+        self.last_sequence_drawn = None
+        self.last_probe_drawn = None
 
             
     def fn_show_detail(self, obj_type, obj_name, obj_key):
@@ -147,14 +148,18 @@ class cl_mfmc_explorer:
     def fn_plot_probe(self, p): 
         self.canvas = FigureCanvasTkAgg(self.probe_fig,  master = self.tab_graphic)
         self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
-        self.probe_checkboxes = m.graphics.fn_plot_probe(self.probe_fig, p)
-        self.canvas.draw()
+        if not p == self.last_probe_drawn:
+            self.probe_checkboxes = m.graphics.fn_plot_probe(self.probe_fig, p)
+            self.last_probe_drawn = p
+            self.canvas.draw()
 
     def fn_plot_sequence(self, s):
         self.canvas = FigureCanvasTkAgg(self.sequence_fig,  master = self.tab_graphic)
         self.canvas.get_tk_widget().grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
-        self.sequence_checkboxes = m.graphics.fn_plot_sequence(self.sequence_fig, s)
-        self.canvas.draw()
+        if not s == self.last_sequence_drawn:
+            self.sequence_checkboxes = m.graphics.fn_plot_sequence(self.sequence_fig, s)
+            self.last_sequence_drawn = s
+            self.canvas.draw()
         
 
     def fn_new_file_selected(self, fname):

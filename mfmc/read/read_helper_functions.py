@@ -14,6 +14,8 @@ import sys
 sys.path.append('..') #So mfmc can be found in parent directory
 import mfmc
 
+from mfmc.utils import UNITS
+
 
 PROBE_TEST_FUNCTION_PREFIX = 'fn_test_for'
 
@@ -41,9 +43,10 @@ def fn_analyse_probe(probe, relative_tolerance = 0.000001):
            
     return details
 
-UNITS = {'m': ['mm', 1e3],
-         'rads': ['degs', 180 / np.pi],
-         'Hz': ['MHz', 1e-6]}
+# UNITS = {'m': ['mm', 1e3],
+#          'rads': ['degs', 180 / np.pi],
+#          'Hz': ['MHz', 1e-6],
+#          's': ['us', 1e6]}
 
 #Following should go in utilities
 def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS):
