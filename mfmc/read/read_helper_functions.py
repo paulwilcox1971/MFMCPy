@@ -12,10 +12,20 @@ from inspect import isfunction
 
 import sys
 sys.path.append('..') #So mfmc can be found in parent directory
-import mfmc
+
+from ..strs import h5_keys
+from ..strs import eng_keys
+from .probe_type_testers import fn_test_for_1D_linear_probe, fn_test_for_2D_matrix_probe, fn_test_for_2D_other_probe
 
 
 PROBE_TEST_FUNCTION_PREFIX = 'fn_test_for'
+
+
+#Following hardcoded- would be better to search for them using abve prefix
+#probe_test_functions = [m.read.fn_test_for_1D_linear_probe, m.read.fn_test_for_2D_matrix_probe, m.read.fn_test_for_2D_other_probe]
+probe_test_functions = [fn_test_for_1D_linear_probe, fn_test_for_2D_matrix_probe, fn_test_for_2D_other_probe]
+
+
 
 def fn_analyse_probe(probe, relative_tolerance = 0.000001):
     """Try all available probe test functions on MFMC probe data and return
@@ -27,35 +37,47 @@ def fn_analyse_probe(probe, relative_tolerance = 0.000001):
         decimal (e.g. 0.01 = 1% tolerance).
     :type relative_tolerance: float
     """
-    match = 0
-    details = {}
-    #get a list of the probe tester functions in file
-    names = dir(mfmc)
-    for n in names:
-        fn_test_function = getattr(mfmc, n)
-        if isfunction(fn_test_function) and n.startswith(PROBE_TEST_FUNCTION_PREFIX):
-            d = fn_test_function(probe, relative_tolerance)
-            if d[mfmc.MATCH_KEY] > match:
-                match = d[mfmc.MATCH_KEY]
-                details = d
+    best_match = 0
+    best_match_details = None
+    for t in probe_test_functions:
+        details = t(probe)
+        # fn_pretty_print_dictionary(details)
+        if details['Match (%)'] > best_match:
+            best_match = details['Match (%)']
+            best_match_details = details
+    
+    
+    # match = 0
+    # details = {}
+    # #get a list of the probe tester functions in file
+    # names = dir(m.read.probe_type_testers)
+    # for n in names:
+    #     fn_test_function = getattr(m, n)
+    #     if isfunction(fn_test_function) and n.startswith(PROBE_TEST_FUNCTION_PREFIX):
+    #         d = fn_test_function(probe, relative_tolerance)
+    #         if d[m.MATCH_KEY] > match:
+    #             match = d[m.MATCH_KEY]
+    #             details = d
            
-    return details
+    return best_match_details
 
 UNITS = {'m': ['mm', 1e3],
          'rads': ['degs', 180 / np.pi],
          'Hz': ['MHz', 1e-6]}
 
 #Following should go in utilities
-def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS):
+def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS, print_to_string = False):
     """Print contents of dictionary nicely.
     
     :param d: Dictionary to print
     :type d: dictionary
     :param decimal_places: Number of decimal places to use for output.
-    :type decimal_places: itn
+    :type decimal_places: int
     :return: probe details.
     :rtype: dictionary
     """
+    output = ''
+    
     k_max = np.max([len(k) for k in list(d.keys())])
     for k in d.keys():
         v = d[k]
@@ -86,4 +108,17 @@ def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS):
                 s = fmt_str % v_print +' ' + units_to_print
         else:
             s = str(v)
-        print(' ' * (k_max - len(k)) + k + ':', s)
+        output += ' ' * (k_max - len(k)) + k + ': ' + s + '\n'
+        
+    if print_to_string:
+        return output
+    else:
+        print(output)
+            
+            
+# def fn_print_to_string(*args, **kwargs):
+#     output = io.StringIO()
+#     print(*args, file = output, **kwargs)
+#     contents = output.getvalue()
+#     output.close()
+#     return contents

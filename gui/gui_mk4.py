@@ -55,9 +55,9 @@ class cl_mfmc_explorer:
         self.file_menu.add_command(label = 'Exit', command = self.root.destroy)
         self.menubar.add_cascade(label = "File", menu = self.file_menu)
         
-        self.tool_menu = Menu(self.menubar, tearoff = 0)
-        self.tool_menu.add_command(label = 'Check', command = self.fn_check)
-        self.menubar.add_cascade(label = "Tools", menu = self.tool_menu)
+        # self.tool_menu = Menu(self.menubar, tearoff = 0)
+        # self.tool_menu.add_command(label = 'Check', command = self.fn_analyse_sequence)
+        # self.menubar.add_cascade(label = "Tools", menu = self.tool_menu)
 
         #Add tabs
         self.tabs = ttk.Notebook(root)
@@ -90,14 +90,14 @@ class cl_mfmc_explorer:
         self.tab_data_content.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
         
         #add the text bit to the check tab
-        self.tab_check_content = tk.Text(self.tab_check, height = 12)
-        self.tab_check_content.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
-        self.tab_check_content.insert(tk.END, 'Select sequence to check')
+        self.tab_analyse_content = tk.Text(self.tab_check, height = 12)
+        self.tab_analyse_content.grid(column = 0, row = 0, rowspan = 1, columnspan = 1, sticky = 'nsew', padx=5, pady=5)
+        self.tab_analyse_content.insert(tk.END, 'Select sequence or probe to analyse')
         
-        self.tab_check_content.tag_configure('error', foreground = 'red')
-        self.tab_check_content.tag_configure('sizetable', foreground = 'blue')
-        self.tab_check_content.tag_configure('log', foreground = 'gray')
-        self.tab_check_content.tag_configure('bold', relief='raised')
+        self.tab_analyse_content.tag_configure('error', foreground = 'red')
+        self.tab_analyse_content.tag_configure('sizetable', foreground = 'blue')
+        self.tab_analyse_content.tag_configure('log', foreground = 'gray')
+        self.tab_analyse_content.tag_configure('bold', relief='raised')
         
         #add the figure to the graphic tab
         self.probe_fig = Figure()
@@ -110,20 +110,27 @@ class cl_mfmc_explorer:
         self.tab_data_content.delete("1.0", tk.END)
         obj = None
         plot_fn = None
+        analyse_fn = None
         if obj_type == m.strs.h5_keys.PROBE:
             obj = m.read.fn_read_probe(self.MFMC[obj_name])
             plot_fn = self.fn_plot_probe
-            #self.fn_plot_probe(self.MFMC[obj_name])
+            if not(obj_key):
+                analyse_fn = self.fn_analyse_probe
         if obj_type == m.strs.h5_keys.SEQUENCE:
             obj = m.read.fn_read_sequence_data(self.MFMC[obj_name])
             plot_fn = self.fn_plot_sequence
-            #self.fn_plot_sequence(self.MFMC[obj_name])
+            if not(obj_key):
+                analyse_fn = self.fn_analyse_sequence
         if obj_type == m.strs.h5_keys.LAW:
             obj = m.read.fn_read_law(self.MFMC[obj_name])
         #Add text
         if obj:
             if obj_key:
                 self.tab_data_content.insert(tk.END, fn_print_to_string(obj[obj_key]))
+            if analyse_fn:
+                analyse_fn(self.MFMC[obj_name])
+            else:
+                self.fn_clear_analysis_tab()
             if plot_fn:
                 self.plot_handles = plot_fn(self.MFMC[obj_name])
         return
@@ -210,28 +217,38 @@ class cl_mfmc_explorer:
              self.tree.item(p, open = False)
          return     
         
-    def fn_check(self):
-        obj_type, obj, obj_field = self.fn_get_current_tree_item()
-        if obj_type == m.strs.h5_keys.SEQUENCE:
-            (check_log, size_table, err_list) = m.check.fn_check_sequence(self.MFMC[obj])
-            self.tab_check_content.delete("1.0", tk.END)
+    def fn_clear_analysis_tab(self):
+        self.tab_analyse_content.delete("1.0", tk.END)
+        self.tab_analyse_content.insert(tk.END, 'Select sequence or probe to analyse')
+        
+        
+    def fn_analyse_sequence(self, s):
+        (check_log, size_table, err_list) = m.check.fn_check_sequence(s)
+        self.tab_analyse_content.delete("1.0", tk.END)
 
-            self.tab_check_content.insert(tk.END, '\nERRORS\n', ('error', 'bold'))
-            if err_list:
-                for i in err_list:
-                    self.tab_check_content.insert(tk.END, '  ' + i + '\n', ('error'))    
-            else:
-                self.tab_check_content.insert(tk.END, '  None\n', ('error'))    
-                
-            self.tab_check_content.insert(tk.END, '\nSIZE TABLE\n', ('sizetable', 'bold'))
-            ml = max([len(i) for i in size_table.keys()])
-            for i in size_table.keys():
-                self.tab_check_content.insert(tk.END, fn_print_to_string(' ' + ' ' * (ml - len(i)) + i + ': ' + str(size_table[i])), ('sizetable'))    
+        self.tab_analyse_content.insert(tk.END, '\nERRORS\n', ('error', 'bold'))
+        if err_list:
+            for i in err_list:
+                self.tab_analyse_content.insert(tk.END, '  ' + i + '\n', ('error'))    
+        else:
+            self.tab_analyse_content.insert(tk.END, '  None\n', ('error'))    
+            
+        self.tab_analyse_content.insert(tk.END, '\nSIZE TABLE\n', ('sizetable', 'bold'))
+        ml = max([len(i) for i in size_table.keys()])
+        for i in size_table.keys():
+            self.tab_analyse_content.insert(tk.END, fn_print_to_string(' ' + ' ' * (ml - len(i)) + i + ': ' + str(size_table[i])), ('sizetable'))    
 
-            ml = max([i.find(':') for i in check_log])
-            self.tab_check_content.insert(tk.END, '\nCHECK LOG\n', ('log', 'bold'))    
-            for i in check_log:
-                self.tab_check_content.insert(tk.END, ' ' + ' ' * (ml - i.find(':')) + i + '\n', ('log'))    
+        ml = max([i.find(':') for i in check_log])
+        self.tab_analyse_content.insert(tk.END, '\nCHECK LOG\n', ('log', 'bold'))    
+        for i in check_log:
+            self.tab_analyse_content.insert(tk.END, ' ' + ' ' * (ml - i.find(':')) + i + '\n', ('log'))
+    
+    def fn_analyse_probe(self, p):
+        self.tab_analyse_content.delete("1.0", tk.END)
+        self.tab_analyse_content.insert(tk.END, '\nPROBE ANALYSIS\n', ('log', 'bold'))
+        probe = m.read.fn_read_probe(p)
+        details = m.read.fn_analyse_probe(probe, relative_tolerance = 0.000001)
+        self.tab_analyse_content.insert(tk.END, m.read.fn_pretty_print_dictionary(details, print_to_string = True))
             
     def fn_select_file(self):
         filetypes = (
@@ -250,6 +267,8 @@ def fn_print_to_string(*args, **kwargs):
 
 #Actual execution code
 current_dir = os.getcwd()
+initial_file = None
+
 if len(sys.argv) > 1:
     try:
         current_dir = sys.argv[1]
@@ -265,6 +284,7 @@ if len(sys.argv) > 2:
         initial_file = None
         print('File does not exist')
 
+#Following for debugging only to always open specific file and use specific directory
 current_dir = '..\\Example MFMC files'
 initial_file = '..\\Example MFMC files\\AS example.mfmc'
 
@@ -272,8 +292,9 @@ root = tk.Tk()
 mfmc_explorer = cl_mfmc_explorer(root)
 mfmc_explorer.fn_set_up_window()
 mfmc_explorer.current_dir = current_dir
-mfmc_explorer.fn_new_file_selected(initial_file)
-print(mfmc_explorer.current_dir)    
+if initial_file:
+    mfmc_explorer.fn_new_file_selected(initial_file)
+#print(mfmc_explorer.current_dir)    
 root.mainloop()
 
 
