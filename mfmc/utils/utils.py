@@ -11,6 +11,11 @@ import numpy as np
 from ..strs import h5_keys
 from ..strs import eng_keys
 
+UNITS = {'m': ['mm', 1e3],
+         'rads': ['degs', 180 / np.pi],
+         'Hz': ['MHz', 1e-6],
+         's': ['us', 1e6]}
+
 def fn_close_file(MFMC):
     MFMC.close()
     return

@@ -13,9 +13,18 @@ from matplotlib.colors import Normalize
 
 import numpy as np
 from ..read import fn_read_sequence_data, fn_read_frame, fn_read_law
+from ..utils import UNITS
+
 
 from ..strs import h5_keys
 from ..strs import eng_keys
+
+
+#Absolute sizes in mm
+ctrl_mm_h = 50
+map_mm_v = 30
+gap_mm = 15
+inch_to_mm = 25.4
 
 
 def fn_plot_sequence(fig, mfmc_sequence_group):
@@ -24,6 +33,9 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     #clear all the current axes
     for a in fig.axes:
         fig.delaxes(a)
+    
+    
+   
     
     seq_data = fn_read_sequence_data(mfmc_sequence_group) 
 
@@ -36,6 +48,8 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     
     #set up figure    
     edge_fract = 0.05
+    
+    
     ax_map = fig.add_axes([edge_fract, edge_fract, 0.2 - 2 * edge_fract, 0.2 - 2 * edge_fract])
     ax_map.set_axis_off()
 
@@ -47,6 +61,9 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     
     ax_ctrl = fig.add_axes([0.0 +edge_fract, 0.2 + edge_fract, 0.2 - 2 * edge_fract, 0.8 - 2 * edge_fract])
     ax_ctrl.set_axis_off()
+
+ #    ax_btn = fig.add_axes([0,0,0.1,0.1])
+
 
     #unique laws, utx and urx, in order they appear in data for tx and rx
     unique_tx_laws, tx_law_dict, tx_law_indices = fn_analyse_laws(seq_data['TRANSMIT_LAW'])
@@ -83,23 +100,24 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     def fn_mouse_click_bscan(ev):
         nonlocal selected_ascan, selected_time
         if ev.inaxes == ax_bscan:
-            selected_ascan = int(np.round(ev.ydata))
+            selected_ascan = int(np.round(ev.ydata) - 1)
             fn_refresh_ascan()
             
     def fn_refresh_ascan():
-        xd = np.array([time[0], time[-1]]) * 1e6
-        yd = np.array([1,1]) * selected_ascan
+        xd = np.array([time[0], time[-1]]) * UNITS['s'][1]
+        yd = np.array([1,1]) * (selected_ascan + 1)
         bscan_lines[1].set(xdata = xd, ydata = yd, visible = True)
-        ascan_lines[0].set(xdata = time  *1e6, ydata = np.real(data[bscan_indices[selected_ascan - 1], :]), 
+        ascan_lines[0].set(xdata = time  *UNITS['s'][1], ydata = np.real(data[bscan_indices[selected_ascan], :]), 
                            visible = True)
                            
-        ax_ascan.set_xlim(np.array([time[0], time[-1]]) * 1e6)
+        ax_ascan.set_xlim(np.array([time[0], time[-1]]) * UNITS['s'][1])
         ax_ascan.set_ylim([-global_max, global_max])
+        ax_ascan.set_xlabel('Time ($\mu$s)')
         fig.canvas.draw_idle()
 
     def fn_mouse_move_bscan(ev):
         if ev.inaxes == ax_bscan:
-            xd = np.array([min(time), max(time)]) * 1e6
+            xd = np.array([min(time), max(time)]) * UNITS['s'][1]
             yd = np.array([1,1]) * np.round(ev.ydata)
             bscan_lines[0].set(xdata = xd, ydata = yd, visible = True)
         else:
@@ -150,18 +168,53 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
         if show_what == 'Diag':
             bscan_indices = np.asarray(tx_law_indices - rx_law_indices == selected_tx - selected_rx).nonzero()[0]
         im.set_data(np.real(data[bscan_indices,:]))
-        im.set(extent = [np.min(time) * 1e6, np.max(time) * 1e6, 0.5, len(bscan_indices) + 0.5])
-        ax_bscan.set_xlabel('Time ($\mu$s)')
-        ax_bscan.set_ylabel('Ascan')
+        im.set(extent = [np.min(time) * UNITS['s'][1], np.max(time) * UNITS['s'][1], len(bscan_indices) + 0.5, 0.5])
         fig.canvas.draw_idle()
+        
+    def fn_fig_resize(ev):
+        v = fig.get_figheight() * inch_to_mm
+        h = fig.get_figwidth() * inch_to_mm
+
+        #Convert to fractions
+        edge_fract_h = gap_mm / h
+        edge_fract_v = gap_mm / v
+        ctrl_frac_h = ctrl_mm_h / h
+        map_frac_v = map_mm_v / v
+
+
+        col_lefts =   [edge_fract_h, ctrl_frac_h + 2 * edge_fract_h]
+        row_bottoms = [edge_fract_v, map_frac_v  + 2 * edge_fract_v]
+
+        col_widths =  [ctrl_frac_h, 1 - 3 * edge_fract_h - ctrl_frac_h]
+        row_heights = [map_frac_v,  1 - 3 * edge_fract_v - map_frac_v]
+        
+        if col_widths[1] < 0.1 or row_heights[1] < 0.2:
+            return
+        
+        ax_map.set_position([ col_lefts[0],    row_bottoms[0], col_widths[0], row_heights[0]])
+        ax_ctrl.set_position([col_lefts[0], row_bottoms[1], col_widths[0], row_heights[1]])
+        ax_ascan.set_position([col_lefts[1], row_bottoms[0], col_widths[1], row_heights[0]])
+        ax_bscan.set_position([col_lefts[1],  row_bottoms[1], col_widths[1], row_heights[1]])
+        #ax_btn.set_position([col_lefts[0], row_bottoms[1]+row_heights[1] / 2, col_widths[0], row_heights[1] / 2])
+    
+    fig.canvas.mpl_connect('resize_event', fn_fig_resize)
+    
+    # def fn_btn_callback(ev):
+    #     print(ev)
     
     #controls
     check = RadioButtons(
         ax = ax_ctrl,
         labels = ['Tx gather', 'Rx gather', 'Diag'],
-        active = 0
+        active = 2
         )
     check.on_clicked(fn_checkbox_callback)
+    
+    # btn = Button(ax = ax_btn, label ='Test')
+    
+    # btn.on_clicked(fn_btn_callback)
+    
+    
 
     map_widget = AxesWidget(ax_map)
     map_widget.connect_event("button_press_event", fn_mouse_click_map)
@@ -172,10 +225,11 @@ def fn_plot_sequence(fig, mfmc_sequence_group):
     bscan_widget.connect_event('motion_notify_event', fn_mouse_move_bscan)
 
 
-    
+    fn_fig_resize([])
     fn_refresh_bscan()
+    fn_refresh_ascan()
     fn_refresh_map_lines()
-    return check, map_widget
+    return check#, btn
 
 def fn_analyse_laws(focal_laws_for_seq):
     unique_laws, i =  np.unique(focal_laws_for_seq, return_index = True)

@@ -17,6 +17,8 @@ from ..strs import h5_keys
 from ..strs import eng_keys
 from .probe_type_testers import fn_test_for_1D_linear_probe, fn_test_for_2D_matrix_probe, fn_test_for_2D_other_probe
 
+from mfmc.utils import UNITS
+
 
 PROBE_TEST_FUNCTION_PREFIX = 'fn_test_for'
 
@@ -61,9 +63,10 @@ def fn_analyse_probe(probe, relative_tolerance = 0.000001):
            
     return best_match_details
 
-UNITS = {'m': ['mm', 1e3],
-         'rads': ['degs', 180 / np.pi],
-         'Hz': ['MHz', 1e-6]}
+# UNITS = {'m': ['mm', 1e3],
+#          'rads': ['degs', 180 / np.pi],
+#          'Hz': ['MHz', 1e-6],
+#          's': ['us', 1e6]}
 
 #Following should go in utilities
 def fn_pretty_print_dictionary(d, decimal_places = 3, units = UNITS, print_to_string = False):
