@@ -1,0 +1,55 @@
+default_spec comes from spec module and is from utils.default_spec_fname
+
+spec is pandas dataframe based on contents of excel file with NaN replaced by None
+
+MFMC is the (read-only) HDF5 object, i.e. result of MFMC = h5.File(fname, 'r')
+
+#----------------------------------------------------------
+check_log, size_table, err_list = fn_check_sequence(MFMC, sequence_name, spec = default_spec)
+
+sequence_name is just MFMC[s] - QUERY surely arguments should be either (MFMC[s]) or (MFMC, s)?
+
+1. Check that MFMC[s] has attribute TYPE and that TYPE == 'SEQUENCE'
+
+2. Identify relevant parts of spec by searching for where index starts with '{sequence}/'; the relevant parts are returned as a new dataframe with indices now missing the '{sequence}/' prefix.
+
+3. Special check to take action if there is no MFMC_DATA present in sequence and remove the parts of spec related to data, to avoid errors in this case (because MFMC_DATA is mandatory it would raise error otherwise)
+
+4. Check MFMC[s] against spec for sequence using fn_check_mfmc_group_against_specification (see below) and record list of other objects referenced
+
+5. Check probes referenced by sequence using fn_check_mfmc_group_against_specification
+
+6. Check laws referenced by sequence using fn_check_mfmc_group_against_specification
+
+7. Check all probes referenced by laws are also in sequence probe list. COMMENT this is a special case 
+
+#----------------------------------------------------------
+check_log, size_table, err_list, objects_referenced = fn_check_mfmc_group_against_specification(MFMC, SPEC, mfmc_group, spec, check_log = [], size_table = {}, err_list = []):
+
+mfmc_group = MFMC[g] - QUERY why is this and MFMC necessary as arguments?
+
+This is used in multiple places for checking different groups against spec, which is the subset of spec related to group. QUERY - this seems stupid if function is supposed to be general! Would be better to pass complete spec and have relevant part extracted within this function, otherwise the type of group needs to be determined before function is called. Prob OK for MFMC where there are only 3 types of group but for ONDE a more general version would be better.
+
+A. First check there is a TYPE attribute set to one of the possible values in the spec.
+
+B. Get list of dsets and attrs in group.
+
+C. Loop over entries in spec (for name in list(spec.index))
+	Get item = mfmc_group[name] or mfmc_group.attrs[name] depending on whether dset or attr
+	0. Check for missing mandatory item; flag error if missing
+	1. Check type of item matches spec
+	2. Check shape of item using fn_compare_shapes_with_spec_str (see below)
+	3. If HDF5 references, get list of unique entries, follow up each one and check TYPE of group it refers to matches spec. List of objects referenced is returned by this function
+
+#-----------------------------------------------------------
+
+size_table, err = fn_compare_shapes_with_spec_str(shape_tuple, shape_str, size_table)
+
+shape_tuple is shape of relevant dset or attr
+shape_str is associated shape string that comes from spec for this dset or attr
+
+A. Check number of dimensions matches spec
+B. Check numeric dimensions match spec
+C. If symbolic dimension is already in shape_table, check value here is consistent with that already recorded; if not in shape_table, add it with the value for current variable.
+
+COMMENT - this looks OK and good way to do it. Not sure all these variables need to be passed around although it does make code clear.

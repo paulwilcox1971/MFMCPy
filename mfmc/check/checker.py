@@ -23,7 +23,7 @@ SEPARATOR_STR = '; '
 
 
 NUMPY_EQUIV_DTYPE = {
-    'H5T_STRING': np.string_,
+    'H5T_STRING': np.bytes_,
     'H5T_FLOAT': np.floating,
     'H5T_INTEGER': np.integer,
     'H5T_STD_REF_OBJ': np.dtype('O')}

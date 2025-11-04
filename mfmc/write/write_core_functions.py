@@ -16,7 +16,7 @@ from ..strs import h5_keys
 from ..strs import eng_keys
 
 NUMPY_EQUIV_DTYPE_FOR_WRITE = {
-    'H5T_STRING': np.string_,
+    'H5T_STRING': np.bytes_,
     'H5T_FLOAT': np.floating,
     'H5T_INTEGER': np.integer,
     'H5T_STD_REF_OBJ': h5.ref_dtype}
