@@ -53,3 +53,12 @@ B. Check numeric dimensions match spec
 C. If symbolic dimension is already in shape_table, check value here is consistent with that already recorded; if not in shape_table, add it with the value for current variable.
 
 COMMENT - this looks OK and good way to do it. Not sure all these variables need to be passed around although it does make code clear.
+
+#-----------------------------------------------------------
+PLAN FOR MFMC/ONDE INTEGRATED TOOL
+
+A check class that is linked at creation to an MFMC/ONDE file ... or maybe this is a general ONDE class that can form basis of read/write/check functions? Can such a class embody a single structure that it either the content of an existant file or the material to be written to a file with checking applied in same way to both?
+
+Such object would contain properties such as the spec, error_table, size_table; latter being separate for each sequence in file. Access to error_table or size_table would actually activate the check process so that these properties were always current.
+
+A single fn_check_group_against_spec(s). function that checks specific group against spec and recursively follows groups referenced within that group. It is initiated within a sequence s, by accessing either error_table[s] or size_table[s]. As far as possible, there should be no special cases, so need to check spec and see what would be missed by this approach (e.g. in MFMC, the probe_list in a sequence needs to cover all probes referenced by the laws in that sequence). Should also flag when a group has been checked to avoid duplication of effort. Probably this needs a special entry function _fn_check_sequence(s) that handles the housekeeping and any special cases.
